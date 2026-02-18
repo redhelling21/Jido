@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Jido.Config;
 using Jido.Models;
 using Jido.Utils;
@@ -11,7 +12,7 @@ using SharpHook.Native;
 
 namespace Jido.Services
 {
-    public class AutopressService : IAutopressService
+    public class AutopressService : IAutopressService, IDisposable
     {
         private IHooksManager _keyHooksManager;
         private EventSimulator _eventSimulator = new EventSimulator();
@@ -30,7 +31,7 @@ namespace Jido.Services
         public List<ConstantCommand> ConstantCommands => _constantCommands;
         public int ClickDelay => _clickDelay;
         public double IntervalRandomizationRatio => _intervalsRandomizationRatio;
-        private ServiceStatus _status = ServiceStatus.STOPPED;
+        private volatile ServiceStatus _status = ServiceStatus.STOPPED;
 
         public ServiceStatus Status
         {
@@ -61,23 +62,26 @@ namespace Jido.Services
             _clickDelay = _config.Features.Autopress.ClickDelay;
         }
 
+        // Suspend the routine as long as the user clicks
+        private void OnSuspendTimerElapsed(object? sender, ElapsedEventArgs e) => StartAutoPress();
+
         public void SuspendAutoPress(object? sender, EventArgs e)
         {
             if (Status == ServiceStatus.IDLE || Status == ServiceStatus.WORKING)
             {
                 StopAutoPress();
                 Status = ServiceStatus.PAUSED;
-                _suspendTimer = new System.Timers.Timer(ClickDelay);
-                _suspendTimer.Elapsed += (sender, e) =>
-                {
-                    StartAutoPress();
-                };
-                _suspendTimer.AutoReset = false;
+                _suspendTimer.Stop();
+                _suspendTimer.Dispose();
+                _suspendTimer = new System.Timers.Timer(ClickDelay) { AutoReset = false };
+                _suspendTimer.Elapsed += OnSuspendTimerElapsed;
                 _suspendTimer.Start();
             }
             else if (Status == ServiceStatus.PAUSED)
             {
-                _suspendTimer.Interval = ClickDelay;
+                _suspendTimer.Stop();
+                _suspendTimer.Interval = ClickDelay; // reset to full delay
+                _suspendTimer.Start();
             }
         }
 
@@ -91,8 +95,8 @@ namespace Jido.Services
                         _keyHooksManager.UnregisterKey(_toggleKey);
                         _toggleKey = key.Result;
                         _config.Features.Autopress.ToggleKey = key.Result;
-                        _config.Persist();
                         _keyHooksManager.RegisterKey(_toggleKey, ToggleAutopress);
+                        _config.Persist();
                         return _toggleKey;
                     }
                 );
@@ -126,7 +130,7 @@ namespace Jido.Services
         private void StartAutoPress()
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            // Setup
+            // Press all constant commands
             foreach (var command in _constantCommands)
             {
                 _eventSimulator.SimulateKeyPress(command.KeyToPress);
@@ -134,11 +138,15 @@ namespace Jido.Services
 
             // Start key press routine
             _ = Task.Run(() => KeyPressRoutine(_cancellationTokenSource.Token))
-                    .ContinueWith((t) =>
+                .ContinueWith(
+                    (t) =>
                     {
-                        if (t.IsFaulted) throw t.Exception;
-                    }); ;
+                        if (t.IsFaulted)
+                            throw t.Exception;
+                    }
+                );
 
+            // Each command handles its own internal timer
             foreach (var command in _scheduledCommands)
             {
                 command.Start(_queuedCommands);
@@ -149,6 +157,8 @@ namespace Jido.Services
 
         private void StopAutoPress()
         {
+            if (_cancellationTokenSource is null || _cancellationTokenSource.IsCancellationRequested)
+                return;
             _cancellationTokenSource.Cancel();
 
             foreach (var command in _constantCommands)
@@ -160,6 +170,7 @@ namespace Jido.Services
                 command.Stop();
             }
             Status = ServiceStatus.STOPPED;
+            _cancellationTokenSource.Dispose();
         }
 
         private async Task KeyPressRoutine(CancellationToken cancellationToken)
@@ -169,6 +180,7 @@ namespace Jido.Services
                 var foundWork = _queuedCommands.TryDequeue(out var command);
                 if (foundWork)
                 {
+                    // Found a command that asked for action
                     if (command is WaitCommand waitCommand)
                     {
                         await Task.Delay(waitCommand.WaitTimeInMs);
@@ -186,6 +198,13 @@ namespace Jido.Services
                     await Task.Delay(100);
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            _cancellationTokenSource?.Dispose();
+            _suspendTimer?.Dispose();
+            _keyHooksManager.Dispose();
         }
     }
 

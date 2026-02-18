@@ -1,7 +1,3 @@
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +5,10 @@ using System.Runtime.CompilerServices;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Media;
 
 namespace Jido.UI.Components.Pages.InventoryManagement
 {
@@ -17,7 +17,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
         private const int GridWidth = 12;
         private const int GridHeight = 5;
 
-        private bool[][] _cells;
+        private bool[][] _cells = new bool[GridWidth][];
 
         public InventoryOverlay(InventoryOverlayData data)
         {
@@ -26,6 +26,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
             //TransparencyLevelHint = WindowTransparencyLevel.AcrylicBlur;
             ExtendClientAreaToDecorationsHint = true;
             ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
+            SystemDecorations = SystemDecorations.None;
 
             Width = data.InventoryWidth;
             Height = data.InventoryHeight;
@@ -38,6 +39,10 @@ namespace Jido.UI.Components.Pages.InventoryManagement
             };
             for (int col = 0; col < GridWidth; col++)
             {
+                if (_cells[col] == null)
+                {
+                    _cells[col] = new bool[GridHeight];
+                }
                 for (int row = 0; row < GridHeight; row++)
                 {
                     var cell = new Border
@@ -68,7 +73,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
                 InventoryWidth = (int)Width,
                 InventoryHeight = (int)Height,
                 InventorySlots = _cells,
-                InventoryPosition = new int[] { (int)Position.X, (int)Position.Y }
+                InventoryPosition = new int[] { Position.X, Position.Y }
             };
         }
 

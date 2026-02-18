@@ -28,7 +28,7 @@ namespace OpenCVSandbox.Tests
                     using Mat mask3 = new Mat();
                     using Mat mask4 = new Mat();
                     using Mat finalMask = new Mat();
-                    Scalar lowerBound1 = new Scalar(253, 0, 253); // Adjusted lower bound
+                    Scalar lowerBound1 = new Scalar(252, 0, 252); // Adjusted lower bound
                     Scalar upperBound1 = new Scalar(255, 20, 255); // Adjusted upper bound
                     Scalar lowerBound2 = new Scalar(50, 203, 253); // Adjusted lower bound
                     Scalar upperBound2 = new Scalar(51, 205, 255); // Adjusted upper bound

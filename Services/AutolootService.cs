@@ -13,7 +13,7 @@ using Point = OpenCvSharp.Point;
 
 namespace Jido.Services
 {
-    public class AutolootService : IAutolootService
+    public class AutolootService : IAutolootService, IDisposable
     {
         private IHooksManager _keyHooksManager;
         private CancellationTokenSource _cancellationTokenSource;
@@ -76,10 +76,13 @@ namespace Jido.Services
                 Status = ServiceStatus.IDLE;
                 _cancellationTokenSource = new CancellationTokenSource();
                 Task.Run(() => AutolootRoutine(_cancellationTokenSource.Token))
-                    .ContinueWith((t) =>
-                {
-                    if (t.IsFaulted) throw t.Exception;
-                });
+                    .ContinueWith(
+                        (t) =>
+                        {
+                            if (t.IsFaulted)
+                                throw t.Exception;
+                        }
+                    );
             }
             else
             {
@@ -161,6 +164,12 @@ namespace Jido.Services
                     break;
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            _cancellationTokenSource?.Dispose();
+            _keyHooksManager.Dispose();
         }
     }
 

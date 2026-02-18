@@ -9,6 +9,7 @@ using Jido.Models;
 using Jido.Services;
 using Jido.UI.Components;
 using Jido.Utils;
+using SharpHook.Native;
 
 namespace Jido.UI.Components.Pages.Autoloot
 {
@@ -20,7 +21,7 @@ namespace Jido.UI.Components.Pages.Autoloot
         private string changeKeyButtonText;
 
         [ObservableProperty]
-        private string toggleKey;
+        private KeyCode toggleKey;
 
         public ObservableCollection<Color> ColorItems { get; } = new ObservableCollection<Color>();
 
@@ -41,7 +42,7 @@ namespace Jido.UI.Components.Pages.Autoloot
         {
             _autolootService = autolootService;
             _autolootService.StatusChanged += OnAutolootStatusChange;
-            ToggleKey = _autolootService.ToggleKey.ToString();
+            ToggleKey = _autolootService.ToggleKey;
             foreach (var color in _autolootService.Colors)
             {
                 color.PropertyChanged += OnColorChanged;
@@ -71,7 +72,7 @@ namespace Jido.UI.Components.Pages.Autoloot
                 task.ContinueWith(
                     (key) =>
                     {
-                        ToggleKey = key.Result.ToString();
+                        ToggleKey = key.Result;
                         ChangeKeyButtonText = "Change";
                     }
                 );

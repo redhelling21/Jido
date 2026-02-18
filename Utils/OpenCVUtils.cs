@@ -23,9 +23,9 @@ namespace Jido.Utils
                 Math.Max(0, colors.RGB[0] - tolerance)
             );
             var upper = new Scalar(
-                Math.Min(0, colors.RGB[2] + tolerance),
-                Math.Min(0, colors.RGB[1] + tolerance),
-                Math.Min(0, colors.RGB[0] + tolerance)
+                Math.Min(255, colors.RGB[2] + tolerance),
+                Math.Min(255, colors.RGB[1] + tolerance),
+                Math.Min(255, colors.RGB[0] + tolerance)
             );
             return (lower, upper);
         }

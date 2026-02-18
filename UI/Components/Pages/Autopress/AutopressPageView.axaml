@@ -42,7 +42,7 @@
                     <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                                VerticalAlignment="Center" Text="Toggle key" />
                     <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
-                             Text="{Binding ToggleKey}" />
+                             Text="{Binding ToggleKey, Converter={StaticResource KeyCodeConverter}}" />
                     <Button Grid.Row="0" Grid.Column="4" VerticalAlignment="Center"
                             Command="{Binding ChangeKeyCommand}"
                             Content="{Binding ChangeKeyButtonText}" />
@@ -74,7 +74,7 @@
                         <DataTemplate>
                             <StackPanel Grid.Column="0" Classes="CommandContainer" Orientation="Horizontal">
                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Key" />
-                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding KeyToPress, UpdateSourceTrigger=LostFocus}" />
+                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding KeyToPress, Converter={StaticResource KeyCodeConverter}, UpdateSourceTrigger=LostFocus}" />
                                 <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].((vm:AutopressPageViewModel)DataContext).RemoveConstantCommandCommand}" CommandParameter="{Binding .}">
                                     <i:Icon Value="fa fa-minus" />
                                 </Button>
@@ -106,7 +106,7 @@
                                         <Grid ColumnDefinitions="Auto, *, Auto">
                                             <StackPanel Grid.Column="0" Orientation="Horizontal">
                                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Key" />
-                                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding Command.KeyToPress, UpdateSourceTrigger=LostFocus}" />
+                                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding Command.KeyToPress, Converter={StaticResource KeyCodeConverter}, UpdateSourceTrigger=LostFocus}" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="2" Orientation="Horizontal">
                                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Interval" />
@@ -165,7 +165,7 @@
                                                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" Classes="CommandContainer"
                                                                         Orientation="Horizontal">
                                                                 <TextBlock Width="40" Margin="0,0,5,0" VerticalAlignment="Center" Text="Press" />
-                                                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding KeyToPress, UpdateSourceTrigger=LostFocus}" />
+                                                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding KeyToPress, Converter={StaticResource KeyCodeConverter}, UpdateSourceTrigger=LostFocus}" />
                                                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="for" />
                                                                 <TextBox Width="50" Margin="0,0,5,0" Text="{Binding PressDurationInMs}" />
                                                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="ms" />
@@ -202,11 +202,11 @@
                         <Button Command="{Binding AddBasicHighLevelCommandCommand}">
                             <i:Icon Value="fa fa-plus" />
                         </Button>
-                        <Button Command="{Binding AddCompositeHighLevelCommandCommand}>">
+                        <Button Command="{Binding AddCompositeHighLevelCommandCommand}">
                             <i:Icon Value="fa fa-folder-plus" />
                         </Button>
                     </StackPanel>
-                    <Button Grid.Column="2" Command="{Binding SaveAutoPressConfigCommand}>">
+                    <Button Grid.Column="2" Command="{Binding SaveAutoPressConfigCommand}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />

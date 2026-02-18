@@ -17,7 +17,7 @@
                 <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                            VerticalAlignment="Center" Text="Toggle key" />
                 <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" IsEnabled="False"
-                         Text="{Binding ToggleKey}" />
+                         Text="{Binding ToggleKey, Converter={StaticResource KeyCodeConverter}}" />
                 <Button Grid.Row="0" Grid.Column="4" VerticalAlignment="Center"
                         Command="{Binding ChangeKeyCommand}"
                         Content="{Binding ChangeKeyButtonText}" />

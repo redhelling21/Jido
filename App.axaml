@@ -41,5 +41,6 @@
         <FontFamily x:Key="Montserrat">avares://Jido/UI/Assets/Fonts#Montserrat</FontFamily>
 
         <converters:RGBToColorConverter x:Key="RGBToColorConverter" />
+        <converters:KeyCodeConverter x:Key="KeyCodeConverter" />
     </Application.Resources>
 </Application>

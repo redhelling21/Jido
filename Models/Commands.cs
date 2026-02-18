@@ -55,6 +55,7 @@ namespace Jido.Models
         }
     }
 
+    // Command that contains a sequence of low-level commands
     public class CompositeHighLevelCommand : HighLevelCommand
     {
         public List<LowLevelCommand> Commands { get; set; } = new List<LowLevelCommand>();
@@ -68,10 +69,11 @@ namespace Jido.Models
                 CommandQueue.Enqueue(command);
             }
             Random rnd = new Random();
-            Timer.Interval = IntervalInMs * rnd.Next(9, 11) / 10;
+            Timer.Interval = IntervalInMs * (Random.Shared.NextDouble() * 0.2 + 0.9);
         }
 
-        public CompositeHighLevelCommand(List<LowLevelCommand> commands, int intervalInMs) : base(intervalInMs)
+        public CompositeHighLevelCommand(List<LowLevelCommand> commands, int intervalInMs)
+            : base(intervalInMs)
         {
             Commands = commands;
             Timer = new System.Timers.Timer(IntervalInMs);
@@ -90,10 +92,11 @@ namespace Jido.Models
                 return;
             CommandQueue.Enqueue(Command);
             Random rnd = new Random();
-            Timer.Interval = IntervalInMs * rnd.Next(9, 11) / 10;
+            Timer.Interval = IntervalInMs * (Random.Shared.NextDouble() * 0.2 + 0.9);
         }
 
-        public BasicHighLevelCommand(PressCommand command, int intervalInMs) : base(intervalInMs)
+        public BasicHighLevelCommand(PressCommand command, int intervalInMs)
+            : base(intervalInMs)
         {
             Command = command;
 
