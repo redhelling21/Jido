@@ -1,20 +1,20 @@
 using System;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
+using Jido.Config;
+using Jido.Services;
 using Jido.UI.Components;
 using Jido.UI.Components.Common.Sidebar;
 using Jido.UI.Components.Pages.Autoloot;
 using Jido.UI.Components.Pages.Autopress;
-using Jido.Config;
-using Jido.Services;
 using Jido.UI.Components.Pages.Home;
+using Jido.UI.Components.Pages.InventoryManagement;
 using Jido.UI.Routing;
 using Jido.Utils;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
-using Jido.UI.Components.Pages.InventoryManagement;
 
 namespace Jido
 {
@@ -52,6 +52,7 @@ namespace Jido
                 (ViewModelBase)s.GetRequiredService(t)
             ));
             services.AddSingleton<IHooksManager, HooksManager>();
+            services.AddSingleton<IMacroService, MacroService>();
             services.AddSingleton<IAutolootService, AutolootService>();
             services.AddSingleton<IAutopressService, AutopressService>();
             services.AddSingleton<IInventoryManagementService, InventoryManagementService>();

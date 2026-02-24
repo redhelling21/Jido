@@ -86,6 +86,8 @@ public class JidoConfig
     public ScreenConfig Screen { get; set; } = new();
     public FeaturesConfig Features { get; set; } = new();
 
+    public KeyCode ToggleKey { get; set; } = KeyCode.VcF7;
+
     #endregion Properties
 }
 

@@ -18,6 +18,9 @@ namespace Jido.UI.Components.Common.Sidebar
         private Router<ViewModelBase> _router = default!;
 
         [ObservableProperty]
+        private ServiceStatus _macroStatus = ServiceStatus.STOPPED;
+
+        [ObservableProperty]
         private ServiceStatus _autolootStatus = ServiceStatus.STOPPED;
 
         [ObservableProperty]
@@ -38,12 +41,14 @@ namespace Jido.UI.Components.Common.Sidebar
         }
 
         public SidebarViewModel(
+            IMacroService macroService,
             IAutolootService autolootService,
             IAutopressService autopressService,
             Router<ViewModelBase> router
         )
         {
             _router = router;
+            macroService.StatusChanged += (sender, e) => MacroStatus = e;
             autolootService.StatusChanged += (sender, e) => AutolootStatus = e;
             autopressService.StatusChanged += (sender, e) => AutopressStatus = e;
         }

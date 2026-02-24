@@ -18,7 +18,8 @@
                 <sidebar:SidebarMenuItem Name="Default" Classes="active" Click="SetActiveState"
                                          Command="{Binding NavigateTo}"
                                          CommandParameter="{Binding $self.Path}"
-                                         MenuIcon="fa fa-house" MenuName="Home" Path="Home" />
+                                         MenuIcon="fa fa-house" MenuName="Home" Path="Home"
+                                         Status="{Binding MacroStatus}"/>
                 <sidebar:SidebarMenuItem Click="SetActiveState"
                                          Command="{Binding NavigateTo}"
                                          CommandParameter="{Binding $self.Path}"
