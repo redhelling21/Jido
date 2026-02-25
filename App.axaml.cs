@@ -28,6 +28,14 @@ namespace Jido
         public override void OnFrameworkInitializationCompleted()
         {
             IServiceProvider services = ConfigureServices();
+
+            // Eagerly instantiate all feature services so their key hooks are registered at startup
+            // rather than lazily on first page visit.
+            services.GetRequiredService<IMacroService>();
+            services.GetRequiredService<IAutolootService>();
+            services.GetRequiredService<IAutopressService>();
+            services.GetRequiredService<IInventoryManagementService>();
+
             var router = services.GetRequiredService<Router<ViewModelBase>>();
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
