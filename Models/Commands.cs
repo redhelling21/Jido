@@ -53,6 +53,11 @@ namespace Jido.Models
         {
             Timer.Stop();
         }
+
+        protected void RandomizeInterval()
+        {
+            Timer.Interval = IntervalInMs * (Random.Shared.NextDouble() * 0.2 + 0.9);
+        }
     }
 
     // Command that contains a sequence of low-level commands
@@ -65,11 +70,8 @@ namespace Jido.Models
             if (CommandQueue == null)
                 return;
             foreach (var command in Commands)
-            {
                 CommandQueue.Enqueue(command);
-            }
-            Random rnd = new Random();
-            Timer.Interval = IntervalInMs * (Random.Shared.NextDouble() * 0.2 + 0.9);
+            RandomizeInterval();
         }
 
         public CompositeHighLevelCommand(List<LowLevelCommand> commands, int intervalInMs)
@@ -91,8 +93,7 @@ namespace Jido.Models
             if (CommandQueue == null)
                 return;
             CommandQueue.Enqueue(Command);
-            Random rnd = new Random();
-            Timer.Interval = IntervalInMs * (Random.Shared.NextDouble() * 0.2 + 0.9);
+            RandomizeInterval();
         }
 
         public BasicHighLevelCommand(PressCommand command, int intervalInMs)

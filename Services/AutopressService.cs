@@ -84,12 +84,7 @@ namespace Jido.Services
                 _eventSimulator.SimulateKeyPress(cmd.KeyToPress);
 
             // Start key press routine
-            Task.Run(() => KeyPressRoutine(_cancellationTokenSource.Token))
-                .ContinueWith(t =>
-                {
-                    if (t.IsFaulted)
-                        throw t.Exception;
-                });
+            _ = Task.Run(() => KeyPressRoutine(_cancellationTokenSource.Token));
 
             // Each command handles its own internal timer
             foreach (var cmd in ScheduledCommands)
@@ -139,6 +134,7 @@ namespace Jido.Services
 
         public override void Dispose()
         {
+            _keyHooksManager.UnRegisterMouseClick(MouseButton.Button1, SuspendAutoPress);
             _cancellationTokenSource?.Dispose();
             _suspendTimer?.Dispose();
             base.Dispose();
