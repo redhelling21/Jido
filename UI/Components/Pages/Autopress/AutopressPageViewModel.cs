@@ -9,6 +9,7 @@ using Jido.Models;
 using Jido.Services;
 using Jido.UI.ViewModels;
 using Jido.Utils;
+using SharpHook.Native;
 using static Jido.UI.ViewModels.CompositeHighLevelCommandViewModel;
 
 namespace Jido.UI.Components.Pages.Autopress
@@ -22,7 +23,7 @@ namespace Jido.UI.Components.Pages.Autopress
         private string changeKeyButtonText;
 
         [ObservableProperty]
-        private string toggleKey;
+        private KeyCode toggleKey;
 
         [ObservableProperty]
         private int clickDelay;
@@ -88,7 +89,7 @@ namespace Jido.UI.Components.Pages.Autopress
             _autopressService = autopressService;
             _autopressService.StatusChanged += OnAutopressStatusChange;
             _mapper = mapper;
-            ToggleKey = _autopressService.ToggleKey.ToString();
+            ToggleKey = _autopressService.ToggleKey;
             ClickDelay = _autopressService.ClickDelay;
             ScheduledCommands = new ObservableCollection<HighLevelCommandViewModel>(
                 _mapper.Map<List<HighLevelCommandViewModel>>(_autopressService.ScheduledCommands)
@@ -114,7 +115,7 @@ namespace Jido.UI.Components.Pages.Autopress
                 task.ContinueWith(
                     (key) =>
                     {
-                        ToggleKey = key.Result.ToString();
+                        ToggleKey = key.Result;
                         ChangeKeyButtonText = "Change";
                     }
                 );

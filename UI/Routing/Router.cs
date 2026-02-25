@@ -8,6 +8,7 @@ using Jido.UI.Components.Pages.Autoloot;
 using Jido.UI.Components.Pages.Autopress;
 using Jido.UI.Components;
 using Jido.UI.Components.Pages.Home;
+using Jido.UI.Components.Pages.InventoryManagement;
 
 namespace Jido.UI.Routing
 {
@@ -27,7 +28,8 @@ namespace Jido.UI.Routing
             {
                 { "Home", typeof(HomePageViewModel) },
                 { "Autoloot", typeof(AutolootPageViewModel) },
-                { "Autopress", typeof(AutopressPageViewModel) }
+                { "Autopress", typeof(AutopressPageViewModel) },
+                { "InventoryManagement", typeof(InventoryManagementPageViewModel) },
             };
         }
 

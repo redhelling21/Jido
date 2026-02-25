@@ -13,81 +13,43 @@ using Point = OpenCvSharp.Point;
 
 namespace Jido.Services
 {
-    public class AutolootService : IAutolootService
+    public class AutolootService : BaseToggleableService, IAutolootService
     {
-        private IHooksManager _keyHooksManager;
         private CancellationTokenSource _cancellationTokenSource;
-        private JidoConfig _config;
-        private KeyCode _toggleKey;
-        private List<Color> _colors;
-
-        public KeyCode ToggleKey
-        {
-            get => _toggleKey;
-        }
-
-        public List<Color> Colors
-        {
-            get => _colors;
-        }
 
         public ServiceStatus Status { get; set; } = ServiceStatus.STOPPED;
 
         public event EventHandler<ServiceStatus> StatusChanged;
 
-        public AutolootService(IHooksManager keyHooksManager, JidoConfig config)
-        {
-            _keyHooksManager = keyHooksManager;
-            _config = config;
-            _toggleKey = _config.Features.Autoloot.ToggleKey;
-            _colors = _config.Features.Autoloot.Colors;
-            _keyHooksManager.RegisterKey(_toggleKey, ToggleAutoloot);
-        }
+        public AutolootService(IHooksManager keyHooksManager, JidoConfig config, IMacroService macroService)
+            : base(keyHooksManager, config, macroService, config.Features.Autoloot.ToggleKey) { }
 
-        public Task<KeyCode> ChangeToggleKey()
-        {
-            var task = _keyHooksManager
-                .ListenNextKey()
-                .ContinueWith(
-                    (key) =>
-                    {
-                        _keyHooksManager.UnregisterKey(_toggleKey);
-                        _toggleKey = key.Result;
-                        _config.Features.Autoloot.ToggleKey = key.Result;
-                        _config.Persist();
-                        _keyHooksManager.RegisterKey(_toggleKey, ToggleAutoloot);
-                        return _toggleKey;
-                    }
-                );
-            return task;
-        }
-
-        public void UpdateColors(List<Color> colors)
-        {
-            _colors = colors;
-            _config.Features.Autoloot.Colors = colors;
-            _config.Persist();
-        }
-
-        private void ToggleAutoloot(object? sender, EventArgs e)
+        public override void Toggle()
         {
             if (Status == ServiceStatus.STOPPED)
             {
-                Status = ServiceStatus.IDLE;
+                if (_macroService.Status == ServiceStatus.STOPPED)
+                    return;
                 _cancellationTokenSource = new CancellationTokenSource();
+                Status = ServiceStatus.IDLE;
                 Task.Run(() => AutolootRoutine(_cancellationTokenSource.Token))
-                    .ContinueWith((t) =>
-                {
-                    if (t.IsFaulted) throw t.Exception;
-                });
+                    .ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                            throw t.Exception;
+                    });
             }
             else
-            {
-                _cancellationTokenSource.Cancel();
-                Status = ServiceStatus.STOPPED;
-            }
-            StatusChanged?.Invoke(this, Status);
+                StopRoutine();
         }
+
+        protected override void StopRoutine()
+        {
+            _cancellationTokenSource?.Cancel();
+            Status = ServiceStatus.STOPPED;
+        }
+
+        protected override void PersistToggleKey(KeyCode key) => _config.Features.Autoloot.ToggleKey = key;
 
         private async Task AutolootRoutine(CancellationToken cancellationToken)
         {
@@ -101,7 +63,7 @@ namespace Jido.Services
             while (!cancellationToken.IsCancellationRequested)
             {
                 await Task.Delay(100);
-                using Mat screenImage = ScreenUtils.CaptureScreen(centerBounds);
+                /*using Mat screenImage = ScreenUtils.CaptureScreen(centerBounds);
                 using Mat finalMask = new Mat(height, width, MatType.CV_8UC3, new Scalar(0));
                 foreach (var color in _colors)
                 {
@@ -159,15 +121,17 @@ namespace Jido.Services
                     short cy = (short)(moments.M01 / moments.M00);
                     await SimulationUtils.MouseMoveAndClickAsync((short)(cx + x), (short)(cy + y));
                     break;
-                }
+                }*/
             }
+        }
+
+        public override void Dispose()
+        {
+            _cancellationTokenSource?.Dispose();
+            base.Dispose();
         }
     }
 
     public interface IAutolootService : IServiceWithStatus, IToggleableService
-    {
-        public void UpdateColors(List<Color> colors);
-
-        public List<Color> Colors { get; }
-    }
+    { }
 }

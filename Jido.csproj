@@ -46,6 +46,9 @@
     <Compile Update="UI\Components\Pages\Autopress\AutopressPageView.axaml.cs">
       <DependentUpon>AutopressPageView.axaml</DependentUpon>
     </Compile>
+    <Compile Update="UI\Components\Pages\InventoryManagement\InventoryManagementPageView.axaml.cs">
+      <DependentUpon>InventoryManagementPageView.axaml</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 

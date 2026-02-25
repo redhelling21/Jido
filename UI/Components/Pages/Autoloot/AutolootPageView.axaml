@@ -17,24 +17,11 @@
                 <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                            VerticalAlignment="Center" Text="Toggle key" />
                 <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" IsEnabled="False"
-                         Text="{Binding ToggleKey}" />
+                         Text="{Binding ToggleKey, Converter={StaticResource KeyCodeConverter}}" />
                 <Button Grid.Row="0" Grid.Column="4" VerticalAlignment="Center"
                         Command="{Binding ChangeKeyCommand}"
                         Content="{Binding ChangeKeyButtonText}" />
             </Grid>
-            <TextBlock Margin="0,10,0,5" FontSize="16" FontWeight="Bold" Text="Colors" />
-            <ItemsControl ItemsSource="{Binding ColorItems}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <ColorPicker Width="100" Margin="0,5,5,5" Color="{Binding RGB, Mode=TwoWay, Converter={StaticResource RGBToColorConverter}}" />
-                            <TextBox Width="100" Margin="0,5,5,5" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-                            <Button Command="{Binding $parent[ItemsControl].((vm:AutolootPageViewModel)DataContext).DeleteColorCommand}" CommandParameter="{Binding .}" Content=" - " />
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <Button Command="{Binding AddColorCommand}" Content=" + " />
         </StackPanel>
     </common:PageWithHeader>
 </UserControl>
