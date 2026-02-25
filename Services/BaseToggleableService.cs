@@ -14,6 +14,7 @@ namespace Jido.Services
         protected readonly IHooksManager _keyHooksManager;
         protected readonly JidoConfig _config;
         protected readonly IMacroService _macroService;
+        protected readonly IServiceHub _serviceHub;
         private KeyCode _toggleKey;
 
         public KeyCode ToggleKey => _toggleKey;
@@ -36,15 +37,19 @@ namespace Jido.Services
             IHooksManager keyHooksManager,
             JidoConfig config,
             IMacroService macroService,
-            KeyCode toggleKey
+            KeyCode toggleKey,
+            IServiceHub serviceHub,
+            string serviceName
         )
         {
             _keyHooksManager = keyHooksManager;
             _config = config;
             _macroService = macroService;
+            _serviceHub = serviceHub;
             _toggleKey = toggleKey;
             _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
             _macroService.StatusChanged += OnMacroStatusChanged;
+            serviceHub.Register(serviceName, this);
         }
 
         public abstract void Toggle();

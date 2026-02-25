@@ -23,8 +23,8 @@ namespace Jido.Services
         public int ClickDelay { get; private set; }
         public double IntervalRandomizationRatio { get; private set; }
 
-        public AutopressService(IHooksManager keyHooksManager, JidoConfig config, IMacroService macroService)
-            : base(keyHooksManager, config, macroService, config.Features.Autopress.ToggleKey)
+        public AutopressService(IHooksManager keyHooksManager, JidoConfig config, IMacroService macroService, IServiceHub serviceHub)
+            : base(keyHooksManager, config, macroService, config.Features.Autopress.ToggleKey, serviceHub, ServiceNames.Autopress)
         {
             InitFromConfig();
             _keyHooksManager.RegisterMouseClick(MouseButton.Button1, SuspendAutoPress);

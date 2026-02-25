@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,8 +8,8 @@ using Jido.Utils;
 using OpenCvSharp;
 using SharpHook;
 using SharpHook.Native;
-using Color = Jido.Models.Color;
 using Point = OpenCvSharp.Point;
+using Size = OpenCvSharp.Size;
 
 namespace Jido.Services
 {
@@ -17,8 +17,21 @@ namespace Jido.Services
     {
         private CancellationTokenSource _cancellationTokenSource;
 
-        public AutolootService(IHooksManager keyHooksManager, JidoConfig config, IMacroService macroService)
-            : base(keyHooksManager, config, macroService, config.Features.Autoloot.ToggleKey) { }
+        public AutolootService(
+            IHooksManager keyHooksManager,
+            JidoConfig config,
+            IMacroService macroService,
+            IServiceHub serviceHub
+        )
+            : base(
+                keyHooksManager,
+                config,
+                macroService,
+                config.Features.Autoloot.ToggleKey,
+                serviceHub,
+                ServiceNames.Autoloot
+            )
+        { }
 
         public override void Toggle()
         {
@@ -44,75 +57,105 @@ namespace Jido.Services
 
         private async Task AutolootRoutine(CancellationToken cancellationToken)
         {
+            var cfg = _config.Features.Autoloot;
+
+            // Capture the center quarter of the screen
             int width = _config.Screen.Width / 2;
             int height = _config.Screen.Height / 2;
-            int x = width / 2;
-            int y = height / 2;
+            Debug.WriteLine($"Width: {_config.Screen.Width}");
+            int captureX = width / 2;
+            int captureY = height / 2;
+            Rectangle captureRegion = new Rectangle(captureX, captureY, width, height);
 
-            Mat lastMask = null;
-            Rectangle centerBounds = new Rectangle(x, y, width, height);
+            // Center of the captured image — used to find the closest rect
+            double imageCenterX = width / 2.0;
+            double imageCenterY = height / 2.0;
+
+            var rng = new Random();
+
+            // Pre-allocate Mats outside the loop to avoid GC pressure
+            using var kernel = Cv2.GetStructuringElement(MorphShapes.Rect, new Size(3, 3));
+            using var dilated = new Mat();
+            using var eroded = new Mat();
+            using var gradient = new Mat();
+            using var combined = new Mat();
+
             while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(100);
-                /*using Mat screenImage = ScreenUtils.CaptureScreen(centerBounds);
-                using Mat finalMask = new Mat(height, width, MatType.CV_8UC3, new Scalar(0));
-                foreach (var color in _colors)
-                {
-                    (Scalar lower, Scalar higher) = color.ToBGRScalarRange(1);
-                    using Mat mask = new Mat();
-                    Cv2.InRange(screenImage, lower, higher, mask);
-                    Cv2.BitwiseOr(finalMask, mask, finalMask);
-                }
-                if (lastMask != null)
-                {
-                    using Mat diff = new Mat();
-                    Cv2.Absdiff(finalMask, lastMask, diff);
-                    var count = Cv2.CountNonZero(diff);
-                    if (Cv2.CountNonZero(diff) > 100)
-                    {
-                        lastMask.Dispose();
-                        lastMask = finalMask.Clone();
-                        continue;
-                    }
-                    else if (Status == ServiceStatus.WORKING)
-                    {
-                        Status = ServiceStatus.IDLE;
-                        StatusChanged?.Invoke(this, Status);
-                    }
-                }
-                else
-                {
-                    lastMask = finalMask.Clone();
-                }
-                Point[][] contours;
-                HierarchyIndex[] hierarchy;
+                using Mat screenImage = ScreenUtils.CaptureScreen(captureRegion);
+
+                // Morphological gradient: dilate - erode highlights edges on all channels
+                Cv2.Dilate(screenImage, dilated, kernel);
+                Cv2.Erode(screenImage, eroded, kernel);
+                Cv2.Subtract(dilated, eroded, gradient);
+
+                // Collapse 3-channel gradient to 1 channel by taking per-pixel max
+                Cv2.Split(gradient, out Mat[] ch);
+                Cv2.Max(ch[0], ch[1], combined);
+                Cv2.Max(combined, ch[2], combined);
+                ch[0].Dispose();
+                ch[1].Dispose();
+                ch[2].Dispose();
+
+                Cv2.Threshold(combined, combined, cfg.Threshold, 255, ThresholdTypes.Binary);
+
                 Cv2.FindContours(
-                    finalMask,
-                    out contours,
-                    out hierarchy,
+                    combined,
+                    out Point[][] contours,
+                    out _,
                     RetrievalModes.List,
                     ContourApproximationModes.ApproxSimple
                 );
 
-                for (int i = 0; i < contours.Length; i++)
+                // Find the rectangle closest to the center of the captured region
+                Rect? bestRect = null;
+                double bestDist = double.MaxValue;
+
+                foreach (var contour in contours)
                 {
-                    if (Cv2.ContourArea(contours[i]) < 100)
+                    if (Cv2.ContourArea(contour) < cfg.MinArea)
                         continue;
-                    Point[] contour = contours[i];
-                    Point[] approxCurve = Cv2.ApproxPolyDP(contours[i], Cv2.ArcLength(contour, true) * 0.02, true);
-                    if (approxCurve.Length != 4)
+
+                    Point[] approx = Cv2.ApproxPolyDP(contour, cfg.Epsilon, true);
+                    if (approx.Length != 4 || !Cv2.IsContourConvex(approx))
+                        continue;
+
+                    Rect br = Cv2.BoundingRect(approx);
+                    double ar = (double)br.Width / br.Height;
+                    if (ar < 1.0 || ar > cfg.MaxAspectRatio)
+                        continue;
+                    double cx = br.X + br.Width / 2.0;
+                    double cy = br.Y + br.Height / 2.0;
+                    double dist = Math.Sqrt(
+                        (cx - imageCenterX) * (cx - imageCenterX) + (cy - imageCenterY) * (cy - imageCenterY)
+                    );
+
+                    if (dist < bestDist)
                     {
-                        continue;
+                        bestDist = dist;
+                        bestRect = br;
                     }
+                }
+
+                if (bestRect.HasValue && !_serviceHub.IsActive(ServiceNames.Autopress))
+                {
+                    var br = bestRect.Value;
+                    // Randomize the click position within the bounding rect
+                    int clickX = captureX + rng.Next(br.X, br.X + br.Width);
+                    int clickY = captureY + rng.Next(br.Y, br.Y + br.Height);
+
                     Status = ServiceStatus.WORKING;
-                    StatusChanged?.Invoke(this, Status);
-                    // Calculate centroid of contour
-                    Moments moments = Cv2.Moments(contours[i]);
-                    short cx = (short)(moments.M10 / moments.M00);
-                    short cy = (short)(moments.M01 / moments.M00);
-                    await SimulationUtils.MouseMoveAndClickAsync((short)(cx + x), (short)(cy + y));
-                    break;
-                }*/
+                    await SimulationUtils.MouseMoveAndClickAsync((short)clickX, (short)clickY);
+                    Status = ServiceStatus.IDLE;
+                }
+                else if (Status != ServiceStatus.IDLE)
+                {
+                    Status = ServiceStatus.IDLE;
+                }
+
+                // Rate-limit: wait the remainder of the configured interval
+                int delayMs = (int)(1000.0 / cfg.MaxClicksPerSecond);
+                await Task.Delay(delayMs);
             }
         }
 

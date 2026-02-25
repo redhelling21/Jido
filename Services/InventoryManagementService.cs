@@ -30,10 +30,11 @@ namespace Jido.Services
 
         public event EventHandler<ServiceStatus> StatusChanged;
 
-        public InventoryManagementService(IHooksManager keyHooksManager, JidoConfig config)
+        public InventoryManagementService(IHooksManager keyHooksManager, JidoConfig config, IServiceHub serviceHub)
         {
             _keyHooksManager = keyHooksManager;
             _config = config;
+            serviceHub.Register(ServiceNames.InventoryManagement, this);
             InitFromConfig();
         }
 

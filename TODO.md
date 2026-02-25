@@ -14,6 +14,7 @@ Because I'm too lazy to create issues, here's a list of things I want to do with
   - [ ] Restrict some features to being in a town / in a map only
   - [ ] "Buttons wheel" on key press to trigger some less-used features
   - [ ] Implement bottom bar tooltips
+  - [ ] Base config (screen dimensions, etc...)
 - [ ] Autoloot
   - [x] Implement autoloot
   - [x] Allow colors selection

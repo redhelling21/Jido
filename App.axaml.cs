@@ -52,6 +52,7 @@ namespace Jido
                 (ViewModelBase)s.GetRequiredService(t)
             ));
             services.AddSingleton<IHooksManager, HooksManager>();
+            services.AddSingleton<IServiceHub, ServiceHub>();
             services.AddSingleton<IMacroService, MacroService>();
             services.AddSingleton<IAutolootService, AutolootService>();
             services.AddSingleton<IAutopressService, AutopressService>();
