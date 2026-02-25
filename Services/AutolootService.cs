@@ -17,10 +17,6 @@ namespace Jido.Services
     {
         private CancellationTokenSource _cancellationTokenSource;
 
-        public ServiceStatus Status { get; set; } = ServiceStatus.STOPPED;
-
-        public event EventHandler<ServiceStatus> StatusChanged;
-
         public AutolootService(IHooksManager keyHooksManager, JidoConfig config, IMacroService macroService)
             : base(keyHooksManager, config, macroService, config.Features.Autoloot.ToggleKey) { }
 
@@ -32,12 +28,7 @@ namespace Jido.Services
                     return;
                 _cancellationTokenSource = new CancellationTokenSource();
                 Status = ServiceStatus.IDLE;
-                Task.Run(() => AutolootRoutine(_cancellationTokenSource.Token))
-                    .ContinueWith(t =>
-                    {
-                        if (t.IsFaulted)
-                            throw t.Exception;
-                    });
+                _ = Task.Run(() => AutolootRoutine(_cancellationTokenSource.Token));
             }
             else
                 StopRoutine();

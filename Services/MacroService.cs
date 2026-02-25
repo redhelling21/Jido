@@ -42,26 +42,22 @@ namespace Jido.Services
         public void Toggle()
         {
             Status = Status == ServiceStatus.STOPPED ? ServiceStatus.IDLE : ServiceStatus.STOPPED;
-            StatusChanged?.Invoke(this, Status);
         }
 
-        public Task<KeyCode> ChangeToggleKey()
+        public async Task<KeyCode> ChangeToggleKey()
         {
-            return _keyHooksManager
-                .ListenNextKey()
-                .ContinueWith(task =>
-                {
-                    _keyHooksManager.UnregisterKey(_toggleKey);
-                    _toggleKey = task.Result;
-                    _config.ToggleKey = task.Result;
-                    _config.Persist();
-                    _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
-                    return _toggleKey;
-                });
+            var key = await _keyHooksManager.ListenNextKey();
+            _keyHooksManager.UnregisterKey(_toggleKey);
+            _toggleKey = key;
+            _config.ToggleKey = key;
+            _config.Persist();
+            _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
+            return _toggleKey;
         }
 
         public void Dispose()
         {
+            _keyHooksManager.UnregisterKey(_toggleKey);
             _keyHooksManager.Dispose();
         }
     }

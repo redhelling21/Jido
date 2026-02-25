@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -14,16 +15,10 @@ using static Jido.UI.ViewModels.CompositeHighLevelCommandViewModel;
 
 namespace Jido.UI.Components.Pages.Autopress
 {
-    public partial class AutopressPageViewModel : ViewModelBase
+    public partial class AutopressPageViewModel : ToggleablePageViewModel, IDisposable
     {
         private readonly IAutopressService? _autopressService;
         private readonly IMapper _mapper;
-
-        [ObservableProperty]
-        private string changeKeyButtonText;
-
-        [ObservableProperty]
-        private KeyCode toggleKey;
 
         [ObservableProperty]
         private int clickDelay;
@@ -39,7 +34,6 @@ namespace Jido.UI.Components.Pages.Autopress
 
         public AutopressPageViewModel()
         {
-            ChangeKeyButtonText = "Change";
             // Placeholder for design purpose
             ScheduledCommands = new ObservableCollection<HighLevelCommandViewModel>(
                 new ObservableCollection<HighLevelCommandViewModel>()
@@ -85,11 +79,11 @@ namespace Jido.UI.Components.Pages.Autopress
         }
 
         public AutopressPageViewModel(IAutopressService autopressService, IMapper mapper)
+            : base(autopressService)
         {
             _autopressService = autopressService;
             _autopressService.StatusChanged += OnAutopressStatusChange;
             _mapper = mapper;
-            ToggleKey = _autopressService.ToggleKey;
             ClickDelay = _autopressService.ClickDelay;
             ScheduledCommands = new ObservableCollection<HighLevelCommandViewModel>(
                 _mapper.Map<List<HighLevelCommandViewModel>>(_autopressService.ScheduledCommands)
@@ -97,30 +91,17 @@ namespace Jido.UI.Components.Pages.Autopress
             ConstantCommands = new ObservableCollection<ConstantCommandViewModel>(
                 _mapper.Map<List<ConstantCommandViewModel>>(_autopressService.ConstantCommands)
             );
-            ChangeKeyButtonText = "Change";
         }
 
         private void OnAutopressStatusChange(object? sender, ServiceStatus status)
         { }
 
-        #region commands
-
-        [RelayCommand]
-        private void ChangeKey()
+        public void Dispose()
         {
-            if (_autopressService is not null)
-            {
-                ChangeKeyButtonText = "Listening...";
-                var task = _autopressService.ChangeToggleKey();
-                task.ContinueWith(
-                    (key) =>
-                    {
-                        ToggleKey = key.Result;
-                        ChangeKeyButtonText = "Change";
-                    }
-                );
-            }
+            _autopressService!.StatusChanged -= OnAutopressStatusChange;
         }
+
+        #region commands
 
         [RelayCommand]
         private void AddConstantCommand()

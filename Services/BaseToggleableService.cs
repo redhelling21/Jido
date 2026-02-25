@@ -59,24 +59,21 @@ namespace Jido.Services
                 StopRoutine();
         }
 
-        public Task<KeyCode> ChangeToggleKey()
+        public async Task<KeyCode> ChangeToggleKey()
         {
-            return _keyHooksManager
-                .ListenNextKey()
-                .ContinueWith(task =>
-                {
-                    _keyHooksManager.UnregisterKey(_toggleKey);
-                    _toggleKey = task.Result;
-                    PersistToggleKey(task.Result);
-                    _config.Persist();
-                    _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
-                    return _toggleKey;
-                });
+            var key = await _keyHooksManager.ListenNextKey();
+            _keyHooksManager.UnregisterKey(_toggleKey);
+            _toggleKey = key;
+            PersistToggleKey(key);
+            _config.Persist();
+            _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
+            return _toggleKey;
         }
 
         public virtual void Dispose()
         {
             _macroService.StatusChanged -= OnMacroStatusChanged;
+            _keyHooksManager.UnregisterKey(_toggleKey);
             _keyHooksManager.Dispose();
         }
     }
