@@ -8,22 +8,40 @@
         d:DesignHeight="640" d:DesignWidth="1080" x:DataType="vm:MainWindowViewModel"
         Focusable="True"
         FontFamily="{StaticResource Nunito}"
-        Icon="avares://Jido/UI/Assets/Images/avalonia-logo.ico" mc:Ignorable="d">
+        Icon="avares://Jido/UI/Assets/Images/avalonia-logo.ico"
+        SystemDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        mc:Ignorable="d">
 
     <Design.DataContext>
         <!--
-            This only sets the DataContext for the previewer in an IDE,
-            to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs)
+        This only sets the DataContext for the previewer in an IDE,
+        to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs)
         -->
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
     <Grid RowDefinitions="Auto, *, Auto">
-        <Grid Grid.Row="0" Background="Teal" ColumnDefinitions="Auto, *, Auto">
-            <!--  Title bar  -->
+        <!--  Title bar  -->
+        <Grid Grid.Row="0" Background="{DynamicResource Highlight500}" Height="36"
+              ColumnDefinitions="Auto, *, Auto"
+              PointerPressed="OnTitleBarPointerPressed">
+            <Image Margin="8,2,0,0" Source="avares://Jido/UI/Assets/Images/logo.png" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button Classes="titlebar-btn" Click="OnMinimizeClick">
+                    <i:Icon Value="fa-window-minimize" FontSize="11" />
+                </Button>
+                <Button Classes="titlebar-btn" Click="OnMaximizeClick">
+                    <i:Icon Value="fa-window-maximize" FontSize="11" />
+                </Button>
+                <Button Classes="titlebar-btn titlebar-btn-close" Click="OnCloseClick">
+                    <i:Icon Value="fa-xmark" FontSize="16" />
+                </Button>
+            </StackPanel>
         </Grid>
 
-        <Grid Grid.Row="1" Classes="sidebar" ColumnDefinitions="260, *">
+        <Grid Grid.Row="1" Classes="sidebar" ColumnDefinitions="220, *">
             <!--  Side bar  -->
             <sidebar:SidebarView Grid.Column="0" DataContext="{Binding Sidebar}" />
             <!--  Main content  -->
@@ -32,13 +50,13 @@
             </Border>
         </Grid>
         <!--  Footer  -->
-        <Grid Grid.Row="2" Background="{DynamicResource Highlight200}" ColumnDefinitions="Auto, *, Auto">
-            <Border Grid.Column="0">
-                <Label>Label</Label>
-            </Border>
-            <Border Grid.Column="2">
-                <Label>Buttons</Label>
-            </Border>
-        </Grid>
+        <!--<Grid Grid.Row="2" Background="{DynamicResource Highlight200}" ColumnDefinitions="Auto, *, Auto">
+        <Border Grid.Column="0">
+        <Label>Label</Label>
+        </Border>
+        <Border Grid.Column="2">
+        <Label>Buttons</Label>
+        </Border>
+        </Grid>-->
     </Grid>
 </Window>
