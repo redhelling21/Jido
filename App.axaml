@@ -31,10 +31,11 @@
         <SolidColorBrush x:Key="Highlight900">#2d464c</SolidColorBrush>
         <SolidColorBrush x:Key="Highlight950">#1a2c32</SolidColorBrush>
 
-        <SolidColorBrush x:Key="StatusIdle">#65eb34</SolidColorBrush>
-        <SolidColorBrush x:Key="StatusWorking">#0a61fa</SolidColorBrush>
-        <SolidColorBrush x:Key="StatusStopped">#ecf0f1</SolidColorBrush>
-        <SolidColorBrush x:Key="StatusError">#f44336</SolidColorBrush>
+        <SolidColorBrush x:Key="StatusIdle">#39ff14</SolidColorBrush>
+        <SolidColorBrush x:Key="StatusWorking">#ffe135</SolidColorBrush>
+        <SolidColorBrush x:Key="StatusPaused">#ffe135</SolidColorBrush>
+        <SolidColorBrush x:Key="StatusStopped">#ffffff</SolidColorBrush>
+        <SolidColorBrush x:Key="StatusError">#ff1744</SolidColorBrush>
 
         <FontFamily x:Key="Nunito">avares://Jido/UI/Assets/Fonts#Nunito</FontFamily>
         <FontFamily x:Key="Inter">avares://Jido/UI/Assets/Fonts#Inter</FontFamily>

@@ -43,9 +43,13 @@ namespace Jido.Models
             IntervalInMs = intervalInMs;
         }
 
-        public void Start(ConcurrentQueue<LowLevelCommand> queue)
+        private double _randomizationRatio;
+
+        public void Start(ConcurrentQueue<LowLevelCommand> queue, double randomizationRatio)
         {
             CommandQueue = queue;
+            _randomizationRatio = randomizationRatio;
+            Enqueue();
             Timer.Start();
         }
 
@@ -54,9 +58,12 @@ namespace Jido.Models
             Timer.Stop();
         }
 
+        protected virtual void Enqueue() { }
+
         protected void RandomizeInterval()
         {
-            Timer.Interval = IntervalInMs * (Random.Shared.NextDouble() * 0.2 + 0.9);
+            // Produces a multiplier uniformly distributed in [1 - ratio, 1 + ratio].
+            Timer.Interval = IntervalInMs * (1.0 - _randomizationRatio + Random.Shared.NextDouble() * 2 * _randomizationRatio);
         }
     }
 
@@ -65,12 +72,17 @@ namespace Jido.Models
     {
         public List<LowLevelCommand> Commands { get; set; } = new List<LowLevelCommand>();
 
-        private void TimerCallback(Object? source, ElapsedEventArgs e)
+        protected override void Enqueue()
         {
             if (CommandQueue == null)
                 return;
             foreach (var command in Commands)
                 CommandQueue.Enqueue(command);
+        }
+
+        private void TimerCallback(Object? source, ElapsedEventArgs e)
+        {
+            Enqueue();
             RandomizeInterval();
         }
 
@@ -88,11 +100,16 @@ namespace Jido.Models
     {
         public PressCommand Command { get; set; }
 
-        private void TimerCallback(Object? source, ElapsedEventArgs e)
+        protected override void Enqueue()
         {
             if (CommandQueue == null)
                 return;
             CommandQueue.Enqueue(Command);
+        }
+
+        private void TimerCallback(Object? source, ElapsedEventArgs e)
+        {
+            Enqueue();
             RandomizeInterval();
         }
 
