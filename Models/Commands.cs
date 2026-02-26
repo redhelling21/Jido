@@ -46,6 +46,7 @@ namespace Jido.Models
         public void Start(ConcurrentQueue<LowLevelCommand> queue)
         {
             CommandQueue = queue;
+            Enqueue();
             Timer.Start();
         }
 
@@ -53,6 +54,8 @@ namespace Jido.Models
         {
             Timer.Stop();
         }
+
+        protected virtual void Enqueue() { }
 
         protected void RandomizeInterval()
         {
@@ -65,12 +68,17 @@ namespace Jido.Models
     {
         public List<LowLevelCommand> Commands { get; set; } = new List<LowLevelCommand>();
 
-        private void TimerCallback(Object? source, ElapsedEventArgs e)
+        protected override void Enqueue()
         {
             if (CommandQueue == null)
                 return;
             foreach (var command in Commands)
                 CommandQueue.Enqueue(command);
+        }
+
+        private void TimerCallback(Object? source, ElapsedEventArgs e)
+        {
+            Enqueue();
             RandomizeInterval();
         }
 
@@ -88,11 +96,16 @@ namespace Jido.Models
     {
         public PressCommand Command { get; set; }
 
-        private void TimerCallback(Object? source, ElapsedEventArgs e)
+        protected override void Enqueue()
         {
             if (CommandQueue == null)
                 return;
             CommandQueue.Enqueue(Command);
+        }
+
+        private void TimerCallback(Object? source, ElapsedEventArgs e)
+        {
+            Enqueue();
             RandomizeInterval();
         }
 

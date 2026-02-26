@@ -16,17 +16,30 @@ namespace Jido.Services
     {
         private EventSimulator _eventSimulator = new EventSimulator();
         private CancellationTokenSource _cancellationTokenSource;
-        private System.Timers.Timer _suspendTimer = new();
+        private readonly System.Timers.Timer _suspendTimer = new() { AutoReset = false };
         private readonly ConcurrentQueue<LowLevelCommand> _queuedCommands = new();
         public List<HighLevelCommand> ScheduledCommands { get; private set; }
         public List<ConstantCommand> ConstantCommands { get; private set; }
         public int ClickDelay { get; private set; }
         public double IntervalRandomizationRatio { get; private set; }
 
-        public AutopressService(IHooksManager keyHooksManager, JidoConfig config, IMacroService macroService, IServiceHub serviceHub)
-            : base(keyHooksManager, config, macroService, config.Features.Autopress.ToggleKey, serviceHub, ServiceNames.Autopress)
+        public AutopressService(
+            IHooksManager keyHooksManager,
+            JidoConfig config,
+            IMacroService macroService,
+            IServiceHub serviceHub
+        )
+            : base(
+                keyHooksManager,
+                config,
+                macroService,
+                config.Features.Autopress.ToggleKey,
+                serviceHub,
+                ServiceNames.Autopress
+            )
         {
             InitFromConfig();
+            _suspendTimer.Elapsed += OnSuspendTimerElapsed;
             _keyHooksManager.RegisterMouseClick(MouseButton.Button1, SuspendAutoPress);
         }
 
@@ -40,10 +53,21 @@ namespace Jido.Services
 
         public override void Toggle()
         {
+            if (_macroService.Status == ServiceStatus.STOPPED)
+                return;
+
             if (Status == ServiceStatus.STOPPED)
                 StartRoutine();
             else
-                StopRoutine();
+            {
+                _suspendTimer.Stop();
+                if (Status == ServiceStatus.PAUSED)
+                    // The routine is already stopped (StopRoutine was called by SuspendAutoPress),
+                    // so we only need to cancel the pending resume and update the status.
+                    Status = ServiceStatus.STOPPED;
+                else
+                    StopRoutine();
+            }
         }
 
         public void UpdateConfig(AutopressConfig config)
@@ -62,31 +86,41 @@ namespace Jido.Services
             {
                 StopRoutine();
                 Status = ServiceStatus.PAUSED;
-                _suspendTimer.Stop();
-                _suspendTimer.Dispose();
-                _suspendTimer = new System.Timers.Timer(ClickDelay) { AutoReset = false };
-                _suspendTimer.Elapsed += (_, _) => StartRoutine();
+                _suspendTimer.Interval = ClickDelay;
                 _suspendTimer.Start();
             }
             else if (Status == ServiceStatus.PAUSED)
             {
+                // User clicked again before the resume timer fired — reset the delay
                 _suspendTimer.Stop();
                 _suspendTimer.Interval = ClickDelay;
                 _suspendTimer.Start();
             }
         }
 
+        private void OnSuspendTimerElapsed(object? sender, EventArgs e)
+        {
+            // Guard against the case where Toggle() or the macro stop fired during the suspension
+            // window, both of which set Status away from PAUSED.
+            if (Status == ServiceStatus.PAUSED)
+            {
+                if (_macroService.Status != ServiceStatus.STOPPED)
+                    StartRoutine();
+                else
+                    Status = ServiceStatus.STOPPED;
+            }
+        }
+
         private void StartRoutine()
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            // Press all constant commands
             foreach (var cmd in ConstantCommands)
                 _eventSimulator.SimulateKeyPress(cmd.KeyToPress);
 
-            // Start key press routine
             _ = Task.Run(() => KeyPressRoutine(_cancellationTokenSource.Token));
 
-            // Each command handles its own internal timer
+            // Each command enqueues once immediately on Start(), then continues on its own timer.
+            // KeyPressRoutine consumes the shared queue and handles the actual key simulation.
             foreach (var cmd in ScheduledCommands)
                 cmd.Start(_queuedCommands);
             Status = ServiceStatus.IDLE;
@@ -94,40 +128,58 @@ namespace Jido.Services
 
         protected override void StopRoutine()
         {
+            // Guard against double-stop: called from Toggle, SuspendAutoPress, UpdateConfig, and
+            // the base class macro-stop handler — any of which may race with each other.
             if (_cancellationTokenSource is null || _cancellationTokenSource.IsCancellationRequested)
                 return;
             _cancellationTokenSource.Cancel();
+
+            _suspendTimer.Stop();
 
             foreach (var cmd in ConstantCommands)
                 _eventSimulator.SimulateKeyRelease(cmd.KeyToPress);
 
             foreach (var cmd in ScheduledCommands)
                 cmd.Stop();
+
+            // Drain stale commands so they don't fire on the next StartRoutine.
+            while (_queuedCommands.TryDequeue(out _)) { }
+
             Status = ServiceStatus.STOPPED;
             _cancellationTokenSource.Dispose();
         }
 
         private async Task KeyPressRoutine(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                if (_queuedCommands.TryDequeue(out var command))
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    // We found work
-                    if (command is WaitCommand wait)
-                        await Task.Delay(wait.WaitTimeInMs);
-                    else if (command is PressCommand press)
+                    if (_queuedCommands.TryDequeue(out var command))
                     {
-                        // Artificial delay between presses
-                        await Task.Delay(300);
-                        _eventSimulator.SimulateKeyPress(press.KeyToPress);
-                        await Task.Delay(press.PressDurationInMs);
-                        _eventSimulator.SimulateKeyRelease(press.KeyToPress);
+                        if (command is WaitCommand wait)
+                            await Task.Delay(wait.WaitTimeInMs, cancellationToken);
+                        else if (command is PressCommand press)
+                        {
+                            await Task.Delay(300, cancellationToken);
+                            _eventSimulator.SimulateKeyPress(press.KeyToPress);
+                            // finally guarantees release even if cancellation fires mid-hold,
+                            // preventing keys from getting stuck in a pressed state.
+                            try
+                            {
+                                await Task.Delay(press.PressDurationInMs, cancellationToken);
+                            }
+                            finally
+                            {
+                                _eventSimulator.SimulateKeyRelease(press.KeyToPress);
+                            }
+                        }
                     }
+                    else
+                        await Task.Delay(100, cancellationToken);
                 }
-                else
-                    await Task.Delay(100);
             }
+            catch (OperationCanceledException) { }
         }
 
         protected override void PersistToggleKey(KeyCode key) => _config.Features.Autopress.ToggleKey = key;

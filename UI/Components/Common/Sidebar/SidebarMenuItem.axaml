@@ -7,6 +7,7 @@
             <controls:SidebarMenuItem Classes="active" Status="STOPPED" />
             <controls:SidebarMenuItem Status="IDLE" />
             <controls:SidebarMenuItem Status="WORKING" />
+            <controls:SidebarMenuItem Status="PAUSED" />
             <controls:SidebarMenuItem Status="ERROR" />
         </StackPanel>
     </Design.PreviewWith>
@@ -23,6 +24,9 @@
         <Setter Property="Foreground" Value="{DynamicResource StatusIdle}" />
     </Style>
     <Style Selector="controls|SidebarMenuItem[Status=WORKING] i|Icon.status-indicator">
+        <Setter Property="Foreground" Value="{DynamicResource StatusWorking}" />
+    </Style>
+    <Style Selector="controls|SidebarMenuItem[Status=PAUSED] i|Icon.status-indicator">
         <Setter Property="Foreground" Value="{DynamicResource StatusWorking}" />
     </Style>
     <Style Selector="controls|SidebarMenuItem[Status=ERROR] i|Icon.status-indicator">
