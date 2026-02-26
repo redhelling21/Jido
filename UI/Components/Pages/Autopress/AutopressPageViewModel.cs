@@ -85,6 +85,7 @@ namespace Jido.UI.Components.Pages.Autopress
             _autopressService.StatusChanged += OnAutopressStatusChange;
             _mapper = mapper;
             ClickDelay = _autopressService.ClickDelay;
+            IntervalsRandomizationRatio = _autopressService.IntervalRandomizationRatio * 100;
             ScheduledCommands = new ObservableCollection<HighLevelCommandViewModel>(
                 _mapper.Map<List<HighLevelCommandViewModel>>(_autopressService.ScheduledCommands)
             );

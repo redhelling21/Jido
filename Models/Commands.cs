@@ -43,9 +43,12 @@ namespace Jido.Models
             IntervalInMs = intervalInMs;
         }
 
-        public void Start(ConcurrentQueue<LowLevelCommand> queue)
+        private double _randomizationRatio;
+
+        public void Start(ConcurrentQueue<LowLevelCommand> queue, double randomizationRatio)
         {
             CommandQueue = queue;
+            _randomizationRatio = randomizationRatio;
             Enqueue();
             Timer.Start();
         }
@@ -59,7 +62,8 @@ namespace Jido.Models
 
         protected void RandomizeInterval()
         {
-            Timer.Interval = IntervalInMs * (Random.Shared.NextDouble() * 0.2 + 0.9);
+            // Produces a multiplier uniformly distributed in [1 - ratio, 1 + ratio].
+            Timer.Interval = IntervalInMs * (1.0 - _randomizationRatio + Random.Shared.NextDouble() * 2 * _randomizationRatio);
         }
     }
 

@@ -122,7 +122,7 @@ namespace Jido.Services
             // Each command enqueues once immediately on Start(), then continues on its own timer.
             // KeyPressRoutine consumes the shared queue and handles the actual key simulation.
             foreach (var cmd in ScheduledCommands)
-                cmd.Start(_queuedCommands);
+                cmd.Start(_queuedCommands, IntervalRandomizationRatio);
             Status = ServiceStatus.IDLE;
         }
 
