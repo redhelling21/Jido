@@ -11,21 +11,39 @@ namespace Jido.UI.Components.Pages.Autoloot
     {
         private readonly IAutolootService? _autolootService;
 
+        [ObservableProperty]
+        private double _maxClicksPerSecond;
+
+        [ObservableProperty]
+        private double _captureRatio;
+
+        [ObservableProperty]
+        private string _avgCycleMs = "—";
+
         public AutolootPageViewModel() { }
 
         public AutolootPageViewModel(IAutolootService autolootService)
             : base(autolootService)
         {
             _autolootService = autolootService;
-            _autolootService.StatusChanged += OnAutolootStatusChange;
+            MaxClicksPerSecond = autolootService.MaxClicksPerSecond;
+            CaptureRatio = autolootService.CaptureRatio;
+            autolootService.AverageCycleMsUpdated += OnAverageCycleMsUpdated;
         }
 
-        private void OnAutolootStatusChange(object? sender, ServiceStatus status)
-        { }
+        private void OnAverageCycleMsUpdated(object? sender, double ms) =>
+            AvgCycleMs = $"{ms:F1} ms";
+
+        [RelayCommand]
+        private void SaveAutolootConfig()
+        {
+            _autolootService?.UpdateConfig(MaxClicksPerSecond, CaptureRatio);
+        }
 
         public void Dispose()
         {
-            _autolootService!.StatusChanged -= OnAutolootStatusChange;
+            if (_autolootService is not null)
+                _autolootService.AverageCycleMsUpdated -= OnAverageCycleMsUpdated;
         }
     }
 }

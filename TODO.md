@@ -14,14 +14,13 @@ Because I'm too lazy to create issues, here's a list of things I want to do with
   - [ ] Restrict some features to being in a town / in a map only
   - [ ] "Buttons wheel" on key press to trigger some less-used features
   - [ ] Implement bottom bar tooltips
-  - [ ] Base config (screen dimensions, etc...)
+  - [x] Base config (screen dimensions, etc...)
 - [ ] Autoloot
   - [x] Implement autoloot
-  - [x] Allow colors selection
-  - [ ] Allow shape selection
+  - [x] Allow shape selection
   - [ ] Auto disable if low life/es/mana
   - [ ] Special key to trigger autoloot ignoring movements
-  - [ ] Randomize click positions
+  - [x] Randomize click positions
 - [ ] Autopress
   - [x] Implement autopress
   - [ ] Allow groups of keys to trigger together with a specific delay

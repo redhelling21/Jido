@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:common="using:Jido.UI.Components.Common"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Jido.UI.Components.Pages.Home"
              d:DesignHeight="450" d:DesignWidth="800"
@@ -13,8 +14,10 @@
     </Design.DataContext>
     <common:PageWithHeader Title="Home" Subtitle="Welcome to Jido, a game automation tool">
         <StackPanel HorizontalAlignment="Center">
+
+            <!--  GENERAL  -->
             <TextBlock Margin="0,10,0,5" FontSize="16" FontWeight="Bold" Text="General" />
-            <Grid ColumnDefinitions="*, 5, 100, 5, *" RowDefinitions="Auto, 5, Auto">
+            <Grid ColumnDefinitions="*, 5, 100, 5, *" RowDefinitions="Auto">
                 <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                            VerticalAlignment="Center" Text="Toggle macro" />
                 <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" IsEnabled="False"
@@ -23,6 +26,31 @@
                         Command="{Binding ChangeKeyCommand}"
                         Content="{Binding ChangeKeyButtonText}" />
             </Grid>
+
+            <!--  SCREEN  -->
+            <TextBlock Margin="0,15,0,5" FontSize="16" FontWeight="Bold" Text="Screen" />
+            <Grid ColumnDefinitions="Auto, 5, 100, 5, Auto" RowDefinitions="Auto, 5, Auto, 5, Auto">
+                <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
+                           VerticalAlignment="Center" Text="Width" />
+                <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
+                         Text="{Binding ScreenWidth}" />
+                <TextBlock Grid.Row="0" Grid.Column="4" VerticalAlignment="Center" Text="px" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
+                           VerticalAlignment="Center" Text="Height" />
+                <TextBox Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"
+                         Text="{Binding ScreenHeight}" />
+                <TextBlock Grid.Row="2" Grid.Column="4" VerticalAlignment="Center" Text="px" />
+
+                <Button Grid.Row="4" Grid.Column="4" HorizontalAlignment="Right"
+                        Command="{Binding SaveScreenConfigCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />
+                        <TextBlock Text="Save" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+
         </StackPanel>
     </common:PageWithHeader>
 </UserControl>

@@ -122,7 +122,8 @@ public class AutolootConfig
 
     public int Threshold { get; set; } = 90;
     public double MaxAspectRatio { get; set; } = 2000.0;
-    public double MaxClicksPerSecond { get; set; } = 5.0;
+    public double MaxClicksPerSecond { get; set; } = 3.0;
+    public double CaptureRatio { get; set; } = 0.5;
 }
 
 public class AutopressConfig

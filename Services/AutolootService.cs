@@ -17,6 +17,14 @@ namespace Jido.Services
     {
         private CancellationTokenSource _cancellationTokenSource;
 
+        private double _averageCycleMs;
+        public double AverageCycleMs => _averageCycleMs;
+
+        public event EventHandler<double>? AverageCycleMsUpdated;
+
+        public double MaxClicksPerSecond => _config.Features.Autoloot.MaxClicksPerSecond;
+        public double CaptureRatio => _config.Features.Autoloot.CaptureRatio;
+
         public AutolootService(
             IHooksManager keyHooksManager,
             JidoConfig config,
@@ -55,19 +63,27 @@ namespace Jido.Services
 
         protected override void PersistToggleKey(KeyCode key) => _config.Features.Autoloot.ToggleKey = key;
 
+        public void UpdateConfig(double maxClicksPerSecond, double captureRatio)
+        {
+            if (Status != ServiceStatus.STOPPED)
+                StopRoutine();
+            _config.Features.Autoloot.MaxClicksPerSecond = maxClicksPerSecond;
+            _config.Features.Autoloot.CaptureRatio = captureRatio;
+            _config.Persist();
+        }
+
         private async Task AutolootRoutine(CancellationToken cancellationToken)
         {
+            // Snapshot config once — changes require a restart to apply
             var cfg = _config.Features.Autoloot;
 
-            // Capture the center quarter of the screen
-            int width = _config.Screen.Width / 2;
-            int height = _config.Screen.Height / 2;
-            Debug.WriteLine($"Width: {_config.Screen.Width}");
-            int captureX = width / 2;
-            int captureY = height / 2;
-            Rectangle captureRegion = new Rectangle(captureX, captureY, width, height);
+            int width = (int)(_config.Screen.Width * cfg.CaptureRatio);
+            int height = (int)(_config.Screen.Height * cfg.CaptureRatio);
+            // Top-left pixel of the rectangle
+            int captureX = (_config.Screen.Width - width) / 2;
+            int captureY = (_config.Screen.Height - height) / 2;
+            var captureRegion = new Rectangle(captureX, captureY, width, height);
 
-            // Center of the captured image — used to find the closest rect
             double imageCenterX = width / 2.0;
             double imageCenterY = height / 2.0;
 
@@ -82,9 +98,11 @@ namespace Jido.Services
 
             while (!cancellationToken.IsCancellationRequested)
             {
+                var sw = Stopwatch.StartNew();
+
                 using Mat screenImage = ScreenUtils.CaptureScreen(captureRegion);
 
-                // Morphological gradient: dilate - erode highlights edges on all channels
+                // Morphological gradient: dilate − erode highlights edges on all channels
                 Cv2.Dilate(screenImage, dilated, kernel);
                 Cv2.Erode(screenImage, eroded, kernel);
                 Cv2.Subtract(dilated, eroded, gradient);
@@ -124,6 +142,7 @@ namespace Jido.Services
                     double ar = (double)br.Width / br.Height;
                     if (ar < 1.0 || ar > cfg.MaxAspectRatio)
                         continue;
+
                     double cx = br.X + br.Width / 2.0;
                     double cy = br.Y + br.Height / 2.0;
                     double dist = Math.Sqrt(
@@ -136,6 +155,13 @@ namespace Jido.Services
                         bestRect = br;
                     }
                 }
+
+                sw.Stop();
+
+                // Exponential smoothing
+                double elapsed = sw.Elapsed.TotalMilliseconds;
+                _averageCycleMs = _averageCycleMs == 0 ? elapsed : 0.1 * elapsed + (1 - 0.1) * _averageCycleMs;
+                AverageCycleMsUpdated?.Invoke(this, _averageCycleMs);
 
                 if (bestRect.HasValue && !_serviceHub.IsActive(ServiceNames.Autopress))
                 {
@@ -167,5 +193,13 @@ namespace Jido.Services
     }
 
     public interface IAutolootService : IServiceWithStatus, IToggleableService
-    { }
+    {
+        double MaxClicksPerSecond { get; }
+        double CaptureRatio { get; }
+        double AverageCycleMs { get; }
+
+        event EventHandler<double>? AverageCycleMsUpdated;
+
+        void UpdateConfig(double maxClicksPerSecond, double captureRatio);
+    }
 }
