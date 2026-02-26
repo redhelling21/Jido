@@ -10,9 +10,7 @@ namespace Jido.UI.Components.Common.Sidebar
     public partial class SidebarViewModel : ViewModelBase, IDisposable
     {
         private Router<ViewModelBase> _router = default!;
-        private IMacroService? _macroService;
-        private IAutolootService? _autolootService;
-        private IAutopressService? _autopressService;
+        private IServiceHub? _serviceHub;
 
         [ObservableProperty]
         private ServiceStatus _macroStatus = ServiceStatus.STOPPED;
@@ -32,39 +30,30 @@ namespace Jido.UI.Components.Common.Sidebar
             _router.GoTo(path);
         }
 
-        public SidebarViewModel()
-        {
-            Console.WriteLine("SidebarViewModel created");
-        }
+        public SidebarViewModel() { }
 
-        public SidebarViewModel(
-            IMacroService macroService,
-            IAutolootService autolootService,
-            IAutopressService autopressService,
-            Router<ViewModelBase> router
-        )
+        public SidebarViewModel(IServiceHub serviceHub, Router<ViewModelBase> router)
         {
             _router = router;
-            _macroService = macroService;
-            _autolootService = autolootService;
-            _autopressService = autopressService;
-            macroService.StatusChanged += OnMacroStatusChanged;
-            autolootService.StatusChanged += OnAutolootStatusChanged;
-            autopressService.StatusChanged += OnAutopressStatusChanged;
+            _serviceHub = serviceHub;
+            serviceHub.AnyStatusChanged += OnAnyStatusChanged;
         }
 
-        private void OnMacroStatusChanged(object? sender, ServiceStatus e) => MacroStatus = e;
-        private void OnAutolootStatusChanged(object? sender, ServiceStatus e) => AutolootStatus = e;
-        private void OnAutopressStatusChanged(object? sender, ServiceStatus e) => AutopressStatus = e;
+        private void OnAnyStatusChanged(object? sender, ServiceStatusChangedEventArgs e)
+        {
+            switch (e.ServiceName)
+            {
+                case ServiceNames.Macro: MacroStatus = e.Status; break;
+                case ServiceNames.Autoloot: AutolootStatus = e.Status; break;
+                case ServiceNames.Autopress: AutopressStatus = e.Status; break;
+                case ServiceNames.InventoryManagement: InventoryManagementStatus = e.Status; break;
+            }
+        }
 
         public void Dispose()
         {
-            if (_macroService is not null)
-                _macroService.StatusChanged -= OnMacroStatusChanged;
-            if (_autolootService is not null)
-                _autolootService.StatusChanged -= OnAutolootStatusChanged;
-            if (_autopressService is not null)
-                _autopressService.StatusChanged -= OnAutopressStatusChanged;
+            if (_serviceHub is not null)
+                _serviceHub.AnyStatusChanged -= OnAnyStatusChanged;
         }
     }
 }

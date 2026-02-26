@@ -31,12 +31,13 @@ namespace Jido.Services
 
         public event EventHandler<ServiceStatus> StatusChanged;
 
-        public MacroService(IHooksManager keyHooksManager, JidoConfig config)
+        public MacroService(IHooksManager keyHooksManager, JidoConfig config, IServiceHub serviceHub)
         {
             _keyHooksManager = keyHooksManager;
             _config = config;
             _toggleKey = _config.ToggleKey;
             _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
+            serviceHub.Register(ServiceNames.Macro, this);
         }
 
         public void Toggle()

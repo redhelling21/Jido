@@ -113,6 +113,17 @@ public class AutolootConfig
         {
             new Color() { Name = "Default", RGB = [253, 0, 253] }
         };
+
+    // Minimum size of the rectangle
+    public int MinArea { get; set; } = 2000;
+
+    // Maximum deviation from straight lines
+    public int Epsilon { get; set; } = 2;
+
+    public int Threshold { get; set; } = 90;
+    public double MaxAspectRatio { get; set; } = 2000.0;
+    public double MaxClicksPerSecond { get; set; } = 3.0;
+    public double CaptureRatio { get; set; } = 0.5;
 }
 
 public class AutopressConfig
