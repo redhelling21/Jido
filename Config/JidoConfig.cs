@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Jido.Models;
+using Microsoft.Extensions.Logging;
 using OpenCvSharp;
 using SharpHook.Data;
 using static Jido.Models.CompositeHighLevelCommand;
@@ -18,14 +19,18 @@ public class JidoConfig
     private readonly JsonSerializerOptions? _serializerOptions;
 
     [JsonIgnore]
+    private readonly ILogger<JidoConfig>? _logger;
+
+    [JsonIgnore]
     private string PersistentFileLocation { get; set; } =
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
 
     public JidoConfig()
     { }
 
-    public JidoConfig(string filename)
+    public JidoConfig(string filename, ILogger<JidoConfig>? logger = null)
     {
+        _logger = logger;
         _serializerOptions = new()
         {
             WriteIndented = true,
@@ -37,18 +42,24 @@ public class JidoConfig
         if (string.IsNullOrWhiteSpace(PersistentFileLocation))
             throw new ArgumentException("File path cannot be null or empty.", nameof(PersistentFileLocation));
 
-        // Check if the file exists
         if (File.Exists(PersistentFileLocation))
         {
-            using var sr = new StreamReader(PersistentFileLocation);
-            var config = JsonSerializer.Deserialize<JidoConfig>(sr.ReadToEnd(), _serializerOptions);
-            PropertyInfo[] properties = typeof(JidoConfig).GetProperties();
-            foreach (PropertyInfo property in properties)
+            try
             {
-                if (property.GetCustomAttribute<JsonIgnoreAttribute>() == null)
+                var json = File.ReadAllText(PersistentFileLocation);
+                var config = JsonSerializer.Deserialize<JidoConfig>(json, _serializerOptions);
+                if (config != null)
                 {
-                    property.SetValue(this, property.GetValue(config));
+                    foreach (PropertyInfo property in typeof(JidoConfig).GetProperties())
+                    {
+                        if (property.GetCustomAttribute<JsonIgnoreAttribute>() == null)
+                            property.SetValue(this, property.GetValue(config));
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to load config from {Path}, using defaults.", PersistentFileLocation);
             }
         }
         else
@@ -64,9 +75,15 @@ public class JidoConfig
     /// </summary>
     public void Persist()
     {
-        using var sw = new StreamWriter(PersistentFileLocation);
-        var json = JsonSerializer.Serialize(this, _serializerOptions);
-        sw.Write(json);
+        try
+        {
+            var json = JsonSerializer.Serialize(this, _serializerOptions);
+            File.WriteAllText(PersistentFileLocation, json);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to save config to {Path}.", PersistentFileLocation);
+        }
     }
 
     /// <summary>
@@ -74,9 +91,15 @@ public class JidoConfig
     /// </summary>
     public async Task PersistAsync()
     {
-        await using var sw = new StreamWriter(PersistentFileLocation);
-        var json = JsonSerializer.Serialize(this, _serializerOptions);
-        await sw.WriteAsync(json);
+        try
+        {
+            var json = JsonSerializer.Serialize(this, _serializerOptions);
+            await File.WriteAllTextAsync(PersistentFileLocation, json);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to save config to {Path}.", PersistentFileLocation);
+        }
     }
 
     #endregion Methods

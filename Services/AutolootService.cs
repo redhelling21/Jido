@@ -1,10 +1,12 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Threading;
 using System.Threading.Tasks;
 using Jido.Config;
 using Jido.Utils;
+using Microsoft.Extensions.Logging;
 using OpenCvSharp;
 using SharpHook;
 using SharpHook.Data;
@@ -15,6 +17,7 @@ namespace Jido.Services
 {
     public class AutolootService : BaseToggleableService, IAutolootService
     {
+        private readonly ILogger<AutolootService> _logger;
         private CancellationTokenSource _cancellationTokenSource;
 
         private double _averageCycleMs;
@@ -29,7 +32,8 @@ namespace Jido.Services
             IHooksManager keyHooksManager,
             JidoConfig config,
             IMacroService macroService,
-            IServiceHub serviceHub
+            IServiceHub serviceHub,
+            ILogger<AutolootService> logger
         )
             : base(
                 keyHooksManager,
@@ -39,7 +43,9 @@ namespace Jido.Services
                 serviceHub,
                 ServiceNames.Autoloot
             )
-        { }
+        {
+            _logger = logger;
+        }
 
         public override void Toggle()
         {
@@ -74,114 +80,124 @@ namespace Jido.Services
 
         private async Task AutolootRoutine(CancellationToken cancellationToken)
         {
-            // Snapshot config once — changes require a restart to apply
-            var cfg = _config.Features.Autoloot;
-
-            int width = (int)(_config.Screen.Width * cfg.CaptureRatio);
-            int height = (int)(_config.Screen.Height * cfg.CaptureRatio);
-            // Top-left pixel of the rectangle
-            int captureX = (_config.Screen.Width - width) / 2;
-            int captureY = (_config.Screen.Height - height) / 2;
-            var captureRegion = new Rectangle(captureX, captureY, width, height);
-
-            double imageCenterX = width / 2.0;
-            double imageCenterY = height / 2.0;
-
-            var rng = new Random();
-
-            // Pre-allocate Mats outside the loop to avoid GC pressure
-            using var kernel = Cv2.GetStructuringElement(MorphShapes.Rect, new Size(3, 3));
-            using var dilated = new Mat();
-            using var eroded = new Mat();
-            using var gradient = new Mat();
-            using var combined = new Mat();
-
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                var sw = Stopwatch.StartNew();
+                // Snapshot config once — changes require a restart to apply
+                var cfg = _config.Features.Autoloot;
 
-                using Mat screenImage = ScreenUtils.CaptureScreen(captureRegion);
+                int width = (int)(_config.Screen.Width * cfg.CaptureRatio);
+                int height = (int)(_config.Screen.Height * cfg.CaptureRatio);
+                // Top-left pixel of the rectangle
+                int captureX = (_config.Screen.Width - width) / 2;
+                int captureY = (_config.Screen.Height - height) / 2;
+                var captureRegion = new Rectangle(captureX, captureY, width, height);
 
-                // Morphological gradient: dilate − erode highlights edges on all channels
-                Cv2.Dilate(screenImage, dilated, kernel);
-                Cv2.Erode(screenImage, eroded, kernel);
-                Cv2.Subtract(dilated, eroded, gradient);
+                double imageCenterX = width / 2.0;
+                double imageCenterY = height / 2.0;
 
-                // Collapse 3-channel gradient to 1 channel by taking per-pixel max
-                Cv2.Split(gradient, out Mat[] ch);
-                Cv2.Max(ch[0], ch[1], combined);
-                Cv2.Max(combined, ch[2], combined);
-                ch[0].Dispose();
-                ch[1].Dispose();
-                ch[2].Dispose();
+                var rng = new Random();
 
-                Cv2.Threshold(combined, combined, cfg.Threshold, 255, ThresholdTypes.Binary);
+                // Pre-allocate Mats and bitmap outside the loop to avoid GC pressure
+                using var captureBitmap = new Bitmap(width, height, PixelFormat.Format32bppRgb);
+                using var kernel = Cv2.GetStructuringElement(MorphShapes.Rect, new Size(3, 3));
+                using var dilated = new Mat();
+                using var eroded = new Mat();
+                using var gradient = new Mat();
+                using var combined = new Mat();
 
-                Cv2.FindContours(
-                    combined,
-                    out Point[][] contours,
-                    out _,
-                    RetrievalModes.List,
-                    ContourApproximationModes.ApproxSimple
-                );
-
-                // Find the rectangle closest to the center of the captured region
-                Rect? bestRect = null;
-                double bestDist = double.MaxValue;
-
-                foreach (var contour in contours)
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    if (Cv2.ContourArea(contour) < cfg.MinArea)
-                        continue;
+                    var sw = Stopwatch.StartNew();
 
-                    Point[] approx = Cv2.ApproxPolyDP(contour, cfg.Epsilon, true);
-                    if (approx.Length != 4 || !Cv2.IsContourConvex(approx))
-                        continue;
+                    using Mat screenImage = ScreenUtils.CaptureScreen(captureRegion, captureBitmap);
 
-                    Rect br = Cv2.BoundingRect(approx);
-                    double ar = (double)br.Width / br.Height;
-                    if (ar < 1.0 || ar > cfg.MaxAspectRatio)
-                        continue;
+                    // Morphological gradient: dilate − erode highlights edges on all channels
+                    Cv2.Dilate(screenImage, dilated, kernel);
+                    Cv2.Erode(screenImage, eroded, kernel);
+                    Cv2.Subtract(dilated, eroded, gradient);
 
-                    double cx = br.X + br.Width / 2.0;
-                    double cy = br.Y + br.Height / 2.0;
-                    double dist = Math.Sqrt(
-                        (cx - imageCenterX) * (cx - imageCenterX) + (cy - imageCenterY) * (cy - imageCenterY)
+                    // Collapse 3-channel gradient to 1 channel by taking per-pixel max
+                    Cv2.Split(gradient, out Mat[] ch);
+                    Cv2.Max(ch[0], ch[1], combined);
+                    Cv2.Max(combined, ch[2], combined);
+                    ch[0].Dispose();
+                    ch[1].Dispose();
+                    ch[2].Dispose();
+
+                    Cv2.Threshold(combined, combined, cfg.Threshold, 255, ThresholdTypes.Binary);
+
+                    Cv2.FindContours(
+                        combined,
+                        out Point[][] contours,
+                        out _,
+                        RetrievalModes.List,
+                        ContourApproximationModes.ApproxSimple
                     );
 
-                    if (dist < bestDist)
+                    // Find the rectangle closest to the center of the captured region
+                    Rect? bestRect = null;
+                    double bestDist = double.MaxValue;
+
+                    foreach (var contour in contours)
                     {
-                        bestDist = dist;
-                        bestRect = br;
+                        if (Cv2.ContourArea(contour) < cfg.MinArea)
+                            continue;
+
+                        Point[] approx = Cv2.ApproxPolyDP(contour, cfg.Epsilon, true);
+                        if (approx.Length != 4 || !Cv2.IsContourConvex(approx))
+                            continue;
+
+                        Rect br = Cv2.BoundingRect(approx);
+                        double ar = (double)br.Width / br.Height;
+                        if (ar < 1.0 || ar > cfg.MaxAspectRatio)
+                            continue;
+
+                        double cx = br.X + br.Width / 2.0;
+                        double cy = br.Y + br.Height / 2.0;
+                        double dist = Math.Sqrt(
+                            (cx - imageCenterX) * (cx - imageCenterX) + (cy - imageCenterY) * (cy - imageCenterY)
+                        );
+
+                        if (dist < bestDist)
+                        {
+                            bestDist = dist;
+                            bestRect = br;
+                        }
                     }
+
+                    sw.Stop();
+
+                    // Exponential smoothing
+                    double elapsed = sw.Elapsed.TotalMilliseconds;
+                    _averageCycleMs = _averageCycleMs == 0 ? elapsed : 0.1 * elapsed + (1 - 0.1) * _averageCycleMs;
+                    AverageCycleMsUpdated?.Invoke(this, _averageCycleMs);
+
+                    if (bestRect.HasValue && !_serviceHub.IsActive(ServiceNames.Autopress))
+                    {
+                        var br = bestRect.Value;
+                        // Randomize the click position within the bounding rect
+                        int clickX = captureX + rng.Next(br.X, br.X + br.Width);
+                        int clickY = captureY + rng.Next(br.Y, br.Y + br.Height);
+
+                        Status = ServiceStatus.WORKING;
+                        await SimulationUtils.MouseMoveAndClickAsync((short)clickX, (short)clickY);
+                        Status = ServiceStatus.IDLE;
+                    }
+                    else if (Status != ServiceStatus.IDLE)
+                    {
+                        Status = ServiceStatus.IDLE;
+                    }
+
+                    // Rate-limit: wait the remainder of the configured interval
+                    int delayMs = (int)(1000.0 / cfg.MaxClicksPerSecond);
+                    await Task.Delay(delayMs);
                 }
-
-                sw.Stop();
-
-                // Exponential smoothing
-                double elapsed = sw.Elapsed.TotalMilliseconds;
-                _averageCycleMs = _averageCycleMs == 0 ? elapsed : 0.1 * elapsed + (1 - 0.1) * _averageCycleMs;
-                AverageCycleMsUpdated?.Invoke(this, _averageCycleMs);
-
-                if (bestRect.HasValue && !_serviceHub.IsActive(ServiceNames.Autopress))
-                {
-                    var br = bestRect.Value;
-                    // Randomize the click position within the bounding rect
-                    int clickX = captureX + rng.Next(br.X, br.X + br.Width);
-                    int clickY = captureY + rng.Next(br.Y, br.Y + br.Height);
-
-                    Status = ServiceStatus.WORKING;
-                    await SimulationUtils.MouseMoveAndClickAsync((short)clickX, (short)clickY);
-                    Status = ServiceStatus.IDLE;
-                }
-                else if (Status != ServiceStatus.IDLE)
-                {
-                    Status = ServiceStatus.IDLE;
-                }
-
-                // Rate-limit: wait the remainder of the configured interval
-                int delayMs = (int)(1000.0 / cfg.MaxClicksPerSecond);
-                await Task.Delay(delayMs);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled exception in AutolootRoutine; stopping service.");
+                StopRoutine();
             }
         }
 

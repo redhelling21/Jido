@@ -46,3 +46,4 @@ Because I'm too lazy to create issues, here's a list of things I want to do with
 - [ ] Autoclicker
 - [ ] Chaos recipe
 - [ ] Logout macro
+- [ ] Logs in-app

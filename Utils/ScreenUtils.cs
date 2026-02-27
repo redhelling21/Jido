@@ -12,19 +12,21 @@ namespace Jido.Utils
 {
     public static class ScreenUtils
     {
-        public static Mat CaptureScreen(Rectangle bounds)
+        public static Mat CaptureScreen(Rectangle bounds, Bitmap? reusedBitmap = null)
         {
-            // Create a Bitmap object to hold the screen capture
-            Bitmap screenshot = new(bounds.Width, bounds.Height, PixelFormat.Format32bppRgb);
-
-            // Capture the screen into the Bitmap object
-            using (Graphics graphics = Graphics.FromImage(screenshot))
+            var screenshot = reusedBitmap ?? new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppRgb);
+            try
             {
+                using var graphics = Graphics.FromImage(screenshot);
                 graphics.CopyFromScreen(bounds.X, bounds.Y, 0, 0, bounds.Size, CopyPixelOperation.SourceCopy);
+                return screenshot.ToMat();
             }
-            Mat mat = screenshot.ToMat();
-            screenshot.Dispose();
-            return mat;
+            finally
+            {
+                // Only dispose if we allocated it
+                if (reusedBitmap is null)
+                    screenshot.Dispose();
+            }
         }
     }
 }

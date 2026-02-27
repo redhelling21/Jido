@@ -15,6 +15,7 @@ using Jido.UI.Components.Pages.InventoryManagement;
 using Jido.UI.Routing;
 using Jido.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Jido
 {
@@ -54,8 +55,9 @@ namespace Jido
         private static ServiceProvider ConfigureServices()
         {
             var services = new ServiceCollection();
+            services.AddLogging(b => b.AddDebug().SetMinimumLevel(LogLevel.Debug));
             // Config
-            services.AddSingleton<JidoConfig>(s => new JidoConfig("settings.json"));
+            services.AddSingleton<JidoConfig>(s => new JidoConfig("settings.json", s.GetRequiredService<ILogger<JidoConfig>>()));
             services.AddSingleton<Router<ViewModelBase>>(s => new Router<ViewModelBase>(t =>
                 (ViewModelBase)s.GetRequiredService(t)
             ));

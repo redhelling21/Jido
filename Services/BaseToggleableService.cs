@@ -19,14 +19,15 @@ namespace Jido.Services
 
         public KeyCode ToggleKey => _toggleKey;
 
-        private ServiceStatus _status = ServiceStatus.STOPPED;
+        // ensures cross-thread reads see the latest write
+        private volatile int _statusValue = (int)ServiceStatus.STOPPED;
 
         public ServiceStatus Status
         {
-            get => _status;
+            get => (ServiceStatus)_statusValue;
             protected set
             {
-                _status = value;
+                _statusValue = (int)value;
                 StatusChanged?.Invoke(this, value);
             }
         }

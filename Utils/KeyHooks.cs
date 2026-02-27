@@ -26,7 +26,7 @@ namespace Jido.Utils
         {
             if (_keyPressedEvents.ContainsKey(key))
             {
-                throw new Exception("Key already registered");
+                throw new InvalidOperationException("Key already registered");
             }
             _keyPressedEvents.Add(key, pressed);
         }
@@ -39,7 +39,7 @@ namespace Jido.Utils
             }
             else
             {
-                throw new Exception("Key not registered");
+                throw new InvalidOperationException("Key not registered");
             }
         }
 
@@ -94,7 +94,7 @@ namespace Jido.Utils
             }
             else
             {
-                throw new Exception("Button not registered");
+                throw new InvalidOperationException("Button not registered");
             }
         }
     }
