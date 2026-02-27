@@ -52,13 +52,20 @@ namespace Jido.Services
             if (Status == ServiceStatus.STOPPED)
             {
                 if (_macroService.Status == ServiceStatus.STOPPED)
+                {
+                    _logger.LogWarning("Cannot start autoloot: macro service is stopped.");
                     return;
+                }
+                _logger.LogInformation("Autoloot started.");
                 _cancellationTokenSource = new CancellationTokenSource();
                 Status = ServiceStatus.IDLE;
                 _ = Task.Run(() => AutolootRoutine(_cancellationTokenSource.Token));
             }
             else
+            {
+                _logger.LogInformation("Autoloot stopped.");
                 StopRoutine();
+            }
         }
 
         protected override void StopRoutine()
@@ -92,10 +99,28 @@ namespace Jido.Services
                 int captureY = (_config.Screen.Height - height) / 2;
                 var captureRegion = new Rectangle(captureX, captureY, width, height);
 
+                _logger.LogInformation(
+                    "Routine config — capture region: {W}x{H} at ({X},{Y}), threshold: {T}, minArea: {A}, maxAspect: {R}, maxCps: {C}",
+                    width,
+                    height,
+                    captureX,
+                    captureY,
+                    cfg.Threshold,
+                    cfg.MinArea,
+                    cfg.MaxAspectRatio,
+                    cfg.MaxClicksPerSecond
+                );
+
                 double imageCenterX = width / 2.0;
                 double imageCenterY = height / 2.0;
 
                 var rng = new Random();
+
+                // Movement detection: skip clicks while the character is walking toward loot
+                const double movingThresholdPx = 10.0;
+                bool hasPrevRect = false;
+                double prevCenterX = 0,
+                    prevCenterY = 0;
 
                 // Pre-allocate Mats and bitmap outside the loop to avoid GC pressure
                 using var captureBitmap = new Bitmap(width, height, PixelFormat.Format32bppRgb);
@@ -172,25 +197,71 @@ namespace Jido.Services
                     _averageCycleMs = _averageCycleMs == 0 ? elapsed : 0.1 * elapsed + (1 - 0.1) * _averageCycleMs;
                     AverageCycleMsUpdated?.Invoke(this, _averageCycleMs);
 
+                    _logger.LogDebug(
+                        "Detection — {N} contours found, cycle: {Ms:F1}ms (avg: {Avg:F1}ms)",
+                        contours.Length,
+                        elapsed,
+                        _averageCycleMs
+                    );
+
                     if (bestRect.HasValue && !_serviceHub.IsActive(ServiceNames.Autopress))
                     {
                         var br = bestRect.Value;
-                        // Randomize the click position within the bounding rect
-                        int clickX = captureX + rng.Next(br.X, br.X + br.Width);
-                        int clickY = captureY + rng.Next(br.Y, br.Y + br.Height);
+                        double centerX = br.X + br.Width / 2.0;
+                        double centerY = br.Y + br.Height / 2.0;
 
-                        Status = ServiceStatus.WORKING;
-                        await SimulationUtils.MouseMoveAndClickAsync((short)clickX, (short)clickY);
-                        Status = ServiceStatus.IDLE;
+                        double displacement = hasPrevRect
+                            ? Math.Sqrt(Math.Pow(centerX - prevCenterX, 2) + Math.Pow(centerY - prevCenterY, 2))
+                            : 0;
+                        bool isMoving = displacement > movingThresholdPx;
+
+                        _logger.LogDebug(
+                            "Best rect: ({X},{Y}) {W}x{H}, center: ({CX:F0},{CY:F0}), displacement: {D:F1}px — {State}",
+                            br.X,
+                            br.Y,
+                            br.Width,
+                            br.Height,
+                            centerX,
+                            centerY,
+                            displacement,
+                            isMoving ? "MOVING, skip" : "STILL"
+                        );
+
+                        prevCenterX = centerX;
+                        prevCenterY = centerY;
+                        hasPrevRect = true;
+
+                        if (!isMoving)
+                        {
+                            int clickX = captureX + rng.Next(br.X, br.X + br.Width);
+                            int clickY = captureY + rng.Next(br.Y, br.Y + br.Height);
+
+                            _logger.LogInformation("Clicking at ({X},{Y}).", clickX, clickY);
+                            Status = ServiceStatus.WORKING;
+                            await SimulationUtils.MouseMoveAndClickAsync(
+                                (short)clickX,
+                                (short)clickY,
+                                moveDurationMs: 50
+                            );
+                            _logger.LogDebug("Click done.");
+                            Status = ServiceStatus.IDLE;
+                        }
                     }
-                    else if (Status != ServiceStatus.IDLE)
+                    else
                     {
-                        Status = ServiceStatus.IDLE;
+                        if (bestRect.HasValue)
+                            _logger.LogDebug("Rect found but autopress is active, skipping.");
+                        else
+                            _logger.LogDebug("No rect detected.");
+
+                        hasPrevRect = false;
+                        if (Status != ServiceStatus.IDLE)
+                            Status = ServiceStatus.IDLE;
                     }
 
                     // Rate-limit: wait the remainder of the configured interval
                     int delayMs = (int)(1000.0 / cfg.MaxClicksPerSecond);
-                    await Task.Delay(delayMs);
+                    await Task.Delay(delayMs, cancellationToken);
                 }
             }
             catch (OperationCanceledException) { }
