@@ -4,7 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Jido.Config;
 using Jido.Services;
-using SharpHook.Native;
+using SharpHook.Data;
 
 namespace Jido.UI.Components.Pages.InventoryManagement
 {

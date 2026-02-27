@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Data.Converters;
-using SharpHook.Native;
+using SharpHook.Data;
 
 namespace Jido.UI.Converters
 {

@@ -35,9 +35,8 @@ Because I'm too lazy to create issues, here's a list of things I want to do with
 - [ ] Empty inventory
   - [ ] Implement
   - [ ] Make it work when selling to a vendor or a player
-- [ ] Cards
-    - [ ] Div cards redeemer
-    - [ ] Stacked decks opener
+  - [ ] Use currency on highlighted items
+  - [ ] Take highlighted items into inventory
 - [ ] Sockets recipe spammer
 - [ ] Expedition
     - [ ] Tujen haggler

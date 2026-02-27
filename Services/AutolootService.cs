@@ -7,7 +7,7 @@ using Jido.Config;
 using Jido.Utils;
 using OpenCvSharp;
 using SharpHook;
-using SharpHook.Native;
+using SharpHook.Data;
 using Point = OpenCvSharp.Point;
 using Size = OpenCvSharp.Size;
 

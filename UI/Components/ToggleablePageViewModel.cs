@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Jido.Services;
-using SharpHook.Native;
+using SharpHook.Data;
 
 namespace Jido.UI.Components
 {

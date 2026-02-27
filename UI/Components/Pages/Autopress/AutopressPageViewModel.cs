@@ -10,7 +10,7 @@ using Jido.Models;
 using Jido.Services;
 using Jido.UI.ViewModels;
 using Jido.Utils;
-using SharpHook.Native;
+using SharpHook.Data;
 using static Jido.UI.ViewModels.CompositeHighLevelCommandViewModel;
 
 namespace Jido.UI.Components.Pages.Autopress
@@ -39,31 +39,31 @@ namespace Jido.UI.Components.Pages.Autopress
                 new ObservableCollection<HighLevelCommandViewModel>()
                 {
                     new BasicHighLevelCommandViewModel(
-                        new PressCommandViewModel() { KeyToPress = SharpHook.Native.KeyCode.VcE },
+                        new PressCommandViewModel() { KeyToPress = SharpHook.Data.KeyCode.VcE },
                         1000
                     ),
                     new BasicHighLevelCommandViewModel(
-                        new PressCommandViewModel() { KeyToPress = SharpHook.Native.KeyCode.VcR },
+                        new PressCommandViewModel() { KeyToPress = SharpHook.Data.KeyCode.VcR },
                         2000
                     ),
                     new BasicHighLevelCommandViewModel(
-                        new PressCommandViewModel() { KeyToPress = SharpHook.Native.KeyCode.VcR },
+                        new PressCommandViewModel() { KeyToPress = SharpHook.Data.KeyCode.VcR },
                         3000
                     ),
                     new CompositeHighLevelCommandViewModel(
                         new List<LowLevelCommandViewModel>()
                         {
-                            new PressCommandViewModel() { KeyToPress = SharpHook.Native.KeyCode.VcW },
+                            new PressCommandViewModel() { KeyToPress = SharpHook.Data.KeyCode.VcW },
                             new WaitCommandViewModel() { WaitTimeInMs = 500 },
-                            new PressCommandViewModel() { KeyToPress = SharpHook.Native.KeyCode.VcO },
+                            new PressCommandViewModel() { KeyToPress = SharpHook.Data.KeyCode.VcO },
                         },
                         1500
                     ),
                     new CompositeHighLevelCommandViewModel(
                         new List<LowLevelCommandViewModel>()
                         {
-                            new PressCommandViewModel() { KeyToPress = SharpHook.Native.KeyCode.VcT },
-                            new PressCommandViewModel() { KeyToPress = SharpHook.Native.KeyCode.VcB }
+                            new PressCommandViewModel() { KeyToPress = SharpHook.Data.KeyCode.VcT },
+                            new PressCommandViewModel() { KeyToPress = SharpHook.Data.KeyCode.VcB }
                         },
                         2500
                     )
@@ -72,8 +72,8 @@ namespace Jido.UI.Components.Pages.Autopress
             ConstantCommands = new ObservableCollection<ConstantCommandViewModel>(
                 new List<ConstantCommandViewModel>()
                 {
-                    new() { KeyToPress = SharpHook.Native.KeyCode.VcY },
-                    new() { KeyToPress = SharpHook.Native.KeyCode.VcH },
+                    new() { KeyToPress = SharpHook.Data.KeyCode.VcY },
+                    new() { KeyToPress = SharpHook.Data.KeyCode.VcH },
                 }
             );
         }
@@ -121,7 +121,7 @@ namespace Jido.UI.Components.Pages.Autopress
         private void AddBasicHighLevelCommand()
         {
             var command = new BasicHighLevelCommandViewModel(
-                new PressCommandViewModel() { KeyToPress = SharpHook.Native.KeyCode.VcUndefined },
+                new PressCommandViewModel() { KeyToPress = SharpHook.Data.KeyCode.VcUndefined },
                 1000
             );
             ScheduledCommands.Add(command);
@@ -133,7 +133,7 @@ namespace Jido.UI.Components.Pages.Autopress
             var command = new CompositeHighLevelCommandViewModel(
                 new List<LowLevelCommandViewModel>()
                 {
-                    new PressCommandViewModel() { KeyToPress = SharpHook.Native.KeyCode.VcUndefined },
+                    new PressCommandViewModel() { KeyToPress = SharpHook.Data.KeyCode.VcUndefined },
                 },
                 1000
             );
