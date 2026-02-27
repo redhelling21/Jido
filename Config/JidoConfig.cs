@@ -145,7 +145,7 @@ public class AutolootConfig
 
     public int Threshold { get; set; } = 90;
     public double MaxAspectRatio { get; set; } = 2000.0;
-    public double MaxClicksPerSecond { get; set; } = 3.0;
+    public int CycleDelayMs { get; set; } = 333;
     public double CaptureRatio { get; set; } = 0.5;
 }
 

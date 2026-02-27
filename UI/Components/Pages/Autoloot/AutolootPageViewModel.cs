@@ -12,7 +12,7 @@ namespace Jido.UI.Components.Pages.Autoloot
         private readonly IAutolootService? _autolootService;
 
         [ObservableProperty]
-        private double _maxClicksPerSecond;
+        private int _cycleDelayMs;
 
         [ObservableProperty]
         private double _captureRatio;
@@ -26,7 +26,7 @@ namespace Jido.UI.Components.Pages.Autoloot
             : base(autolootService)
         {
             _autolootService = autolootService;
-            MaxClicksPerSecond = autolootService.MaxClicksPerSecond;
+            CycleDelayMs = autolootService.CycleDelayMs;
             CaptureRatio = autolootService.CaptureRatio;
             autolootService.AverageCycleMsUpdated += OnAverageCycleMsUpdated;
         }
@@ -37,7 +37,7 @@ namespace Jido.UI.Components.Pages.Autoloot
         [RelayCommand]
         private void SaveAutolootConfig()
         {
-            _autolootService?.UpdateConfig(MaxClicksPerSecond, CaptureRatio);
+            _autolootService?.UpdateConfig(CycleDelayMs, CaptureRatio);
         }
 
         public void Dispose()

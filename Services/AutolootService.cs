@@ -25,7 +25,7 @@ namespace Jido.Services
 
         public event EventHandler<double>? AverageCycleMsUpdated;
 
-        public double MaxClicksPerSecond => _config.Features.Autoloot.MaxClicksPerSecond;
+        public int CycleDelayMs => _config.Features.Autoloot.CycleDelayMs;
         public double CaptureRatio => _config.Features.Autoloot.CaptureRatio;
 
         public AutolootService(
@@ -52,20 +52,13 @@ namespace Jido.Services
             if (Status == ServiceStatus.STOPPED)
             {
                 if (_macroService.Status == ServiceStatus.STOPPED)
-                {
-                    _logger.LogWarning("Cannot start autoloot: macro service is stopped.");
                     return;
-                }
-                _logger.LogInformation("Autoloot started.");
                 _cancellationTokenSource = new CancellationTokenSource();
                 Status = ServiceStatus.IDLE;
                 _ = Task.Run(() => AutolootRoutine(_cancellationTokenSource.Token));
             }
             else
-            {
-                _logger.LogInformation("Autoloot stopped.");
                 StopRoutine();
-            }
         }
 
         protected override void StopRoutine()
@@ -76,11 +69,11 @@ namespace Jido.Services
 
         protected override void PersistToggleKey(KeyCode key) => _config.Features.Autoloot.ToggleKey = key;
 
-        public void UpdateConfig(double maxClicksPerSecond, double captureRatio)
+        public void UpdateConfig(int cycleDelayMs, double captureRatio)
         {
             if (Status != ServiceStatus.STOPPED)
                 StopRoutine();
-            _config.Features.Autoloot.MaxClicksPerSecond = maxClicksPerSecond;
+            _config.Features.Autoloot.CycleDelayMs = cycleDelayMs;
             _config.Features.Autoloot.CaptureRatio = captureRatio;
             _config.Persist();
         }
@@ -99,18 +92,6 @@ namespace Jido.Services
                 int captureY = (_config.Screen.Height - height) / 2;
                 var captureRegion = new Rectangle(captureX, captureY, width, height);
 
-                _logger.LogInformation(
-                    "Routine config — capture region: {W}x{H} at ({X},{Y}), threshold: {T}, minArea: {A}, maxAspect: {R}, maxCps: {C}",
-                    width,
-                    height,
-                    captureX,
-                    captureY,
-                    cfg.Threshold,
-                    cfg.MinArea,
-                    cfg.MaxAspectRatio,
-                    cfg.MaxClicksPerSecond
-                );
-
                 double imageCenterX = width / 2.0;
                 double imageCenterY = height / 2.0;
 
@@ -118,9 +99,13 @@ namespace Jido.Services
 
                 // Movement detection: skip clicks while the character is walking toward loot
                 const double movingThresholdPx = 10.0;
+                const double sameRectTolerancePx = 10.0;
                 bool hasPrevRect = false;
+                bool wasMoving = false;
                 double prevCenterX = 0,
                     prevCenterY = 0;
+                double lastClickedCenterX = -1,
+                    lastClickedCenterY = -1;
 
                 // Pre-allocate Mats and bitmap outside the loop to avoid GC pressure
                 using var captureBitmap = new Bitmap(width, height, PixelFormat.Format32bppRgb);
@@ -132,6 +117,18 @@ namespace Jido.Services
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    if (_serviceHub.IsActive(ServiceNames.Autopress))
+                    {
+                        hasPrevRect = false;
+                        wasMoving = false;
+                        lastClickedCenterX = -1;
+                        lastClickedCenterY = -1;
+                        if (Status != ServiceStatus.IDLE)
+                            Status = ServiceStatus.IDLE;
+                        await Task.Delay(100, cancellationToken);
+                        continue;
+                    }
+
                     var sw = Stopwatch.StartNew();
 
                     using Mat screenImage = ScreenUtils.CaptureScreen(captureRegion, captureBitmap);
@@ -159,9 +156,11 @@ namespace Jido.Services
                         ContourApproximationModes.ApproxSimple
                     );
 
-                    // Find the rectangle closest to the center of the captured region
+                    // Find the two rectangles closest to the center of the captured region
                     Rect? bestRect = null;
+                    Rect? secondBestRect = null;
                     double bestDist = double.MaxValue;
+                    double secondBestDist = double.MaxValue;
 
                     foreach (var contour in contours)
                     {
@@ -185,8 +184,15 @@ namespace Jido.Services
 
                         if (dist < bestDist)
                         {
+                            secondBestDist = bestDist;
+                            secondBestRect = bestRect;
                             bestDist = dist;
                             bestRect = br;
+                        }
+                        else if (dist < secondBestDist)
+                        {
+                            secondBestDist = dist;
+                            secondBestRect = br;
                         }
                     }
 
@@ -197,14 +203,7 @@ namespace Jido.Services
                     _averageCycleMs = _averageCycleMs == 0 ? elapsed : 0.1 * elapsed + (1 - 0.1) * _averageCycleMs;
                     AverageCycleMsUpdated?.Invoke(this, _averageCycleMs);
 
-                    _logger.LogDebug(
-                        "Detection — {N} contours found, cycle: {Ms:F1}ms (avg: {Avg:F1}ms)",
-                        contours.Length,
-                        elapsed,
-                        _averageCycleMs
-                    );
-
-                    if (bestRect.HasValue && !_serviceHub.IsActive(ServiceNames.Autopress))
+                    if (bestRect.HasValue)
                     {
                         var br = bestRect.Value;
                         double centerX = br.X + br.Width / 2.0;
@@ -215,53 +214,57 @@ namespace Jido.Services
                             : 0;
                         bool isMoving = displacement > movingThresholdPx;
 
-                        _logger.LogDebug(
-                            "Best rect: ({X},{Y}) {W}x{H}, center: ({CX:F0},{CY:F0}), displacement: {D:F1}px — {State}",
-                            br.X,
-                            br.Y,
-                            br.Width,
-                            br.Height,
-                            centerX,
-                            centerY,
-                            displacement,
-                            isMoving ? "MOVING, skip" : "STILL"
-                        );
-
                         prevCenterX = centerX;
                         prevCenterY = centerY;
                         hasPrevRect = true;
 
+                        bool justStopped = wasMoving && !isMoving;
+                        wasMoving = isMoving;
+
                         if (!isMoving)
                         {
-                            int clickX = captureX + rng.Next(br.X, br.X + br.Width);
-                            int clickY = captureY + rng.Next(br.Y, br.Y + br.Height);
+                            // Skip bestRect if we just arrived at it (justStopped), or if it's the
+                            // same rect we already clicked and it hasn't disappeared yet
+                            bool bestIsLastClicked =
+                                lastClickedCenterX >= 0
+                                && Math.Sqrt(
+                                    Math.Pow(centerX - lastClickedCenterX, 2)
+                                        + Math.Pow(centerY - lastClickedCenterY, 2)
+                                ) < sameRectTolerancePx;
 
-                            _logger.LogInformation("Clicking at ({X},{Y}).", clickX, clickY);
-                            Status = ServiceStatus.WORKING;
-                            await SimulationUtils.MouseMoveAndClickAsync(
-                                (short)clickX,
-                                (short)clickY,
-                                moveDurationMs: 50
-                            );
-                            _logger.LogDebug("Click done.");
-                            Status = ServiceStatus.IDLE;
+                            bool skipBest = justStopped || bestIsLastClicked;
+                            Rect? targetRect = skipBest ? secondBestRect : bestRect;
+
+                            if (targetRect.HasValue)
+                            {
+                                var tr = targetRect.Value;
+                                int clickX = captureX + rng.Next(tr.X, tr.X + tr.Width);
+                                int clickY = captureY + rng.Next(tr.Y, tr.Y + tr.Height);
+
+                                lastClickedCenterX = tr.X + tr.Width / 2.0;
+                                lastClickedCenterY = tr.Y + tr.Height / 2.0;
+
+                                Status = ServiceStatus.WORKING;
+                                await SimulationUtils.MouseMoveAndClickAsync(
+                                    (short)clickX,
+                                    (short)clickY,
+                                    moveDurationMs: 50
+                                );
+                                Status = ServiceStatus.IDLE;
+                            }
                         }
                     }
                     else
                     {
-                        if (bestRect.HasValue)
-                            _logger.LogDebug("Rect found but autopress is active, skipping.");
-                        else
-                            _logger.LogDebug("No rect detected.");
-
                         hasPrevRect = false;
+                        wasMoving = false;
+                        lastClickedCenterX = -1;
+                        lastClickedCenterY = -1;
                         if (Status != ServiceStatus.IDLE)
                             Status = ServiceStatus.IDLE;
                     }
 
-                    // Rate-limit: wait the remainder of the configured interval
-                    int delayMs = (int)(1000.0 / cfg.MaxClicksPerSecond);
-                    await Task.Delay(delayMs, cancellationToken);
+                    await Task.Delay(cfg.CycleDelayMs, cancellationToken);
                 }
             }
             catch (OperationCanceledException) { }
@@ -281,12 +284,12 @@ namespace Jido.Services
 
     public interface IAutolootService : IServiceWithStatus, IToggleableService
     {
-        double MaxClicksPerSecond { get; }
+        int CycleDelayMs { get; }
         double CaptureRatio { get; }
         double AverageCycleMs { get; }
 
         event EventHandler<double>? AverageCycleMsUpdated;
 
-        void UpdateConfig(double maxClicksPerSecond, double captureRatio);
+        void UpdateConfig(int cycleDelayMs, double captureRatio);
     }
 }
