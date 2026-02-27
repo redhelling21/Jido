@@ -7,7 +7,7 @@ using Jido.Config;
 using Jido.Models;
 using Jido.Utils;
 using SharpHook;
-using SharpHook.Native;
+using SharpHook.Data;
 
 namespace Jido.Services
 {

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Jido.Config;
 using Jido.Utils;
-using SharpHook.Native;
+using SharpHook.Data;
 
 namespace Jido.Services
 {

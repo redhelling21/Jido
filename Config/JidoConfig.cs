@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Jido.Models;
 using OpenCvSharp;
-using SharpHook.Native;
+using SharpHook.Data;
 using static Jido.Models.CompositeHighLevelCommand;
 
 namespace Jido.Config;

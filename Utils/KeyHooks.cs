@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using SharpHook;
-using SharpHook.Native;
+using SharpHook.Data;
 
 namespace Jido.Utils
 {

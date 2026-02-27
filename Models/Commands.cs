@@ -5,7 +5,7 @@ using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Timers;
-using SharpHook.Native;
+using SharpHook.Data;
 
 namespace Jido.Models
 {
@@ -58,7 +58,8 @@ namespace Jido.Models
             Timer.Stop();
         }
 
-        protected virtual void Enqueue() { }
+        protected virtual void Enqueue()
+        { }
 
         protected void RandomizeInterval()
         {

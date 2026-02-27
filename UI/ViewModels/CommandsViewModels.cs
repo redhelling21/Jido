@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using SharpHook.Native;
+using SharpHook.Data;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
