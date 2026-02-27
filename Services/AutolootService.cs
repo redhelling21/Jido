@@ -119,6 +119,7 @@ namespace Jido.Services
                 {
                     if (_serviceHub.IsActive(ServiceNames.Autopress))
                     {
+                        // If autopress is active, reset everything and wait
                         hasPrevRect = false;
                         wasMoving = false;
                         lastClickedCenterX = -1;
@@ -128,12 +129,13 @@ namespace Jido.Services
                         await Task.Delay(100, cancellationToken);
                         continue;
                     }
+                    cancellationToken.ThrowIfCancellationRequested();
 
                     var sw = Stopwatch.StartNew();
 
                     using Mat screenImage = ScreenUtils.CaptureScreen(captureRegion, captureBitmap);
 
-                    // Morphological gradient: dilate − erode highlights edges on all channels
+                    // Dilate + erode highlights edges of shapes (including rectangles)
                     Cv2.Dilate(screenImage, dilated, kernel);
                     Cv2.Erode(screenImage, eroded, kernel);
                     Cv2.Subtract(dilated, eroded, gradient);
@@ -145,7 +147,7 @@ namespace Jido.Services
                     ch[0].Dispose();
                     ch[1].Dispose();
                     ch[2].Dispose();
-
+                    // Then apply threshold
                     Cv2.Threshold(combined, combined, cfg.Threshold, 255, ThresholdTypes.Binary);
 
                     Cv2.FindContours(
@@ -156,7 +158,6 @@ namespace Jido.Services
                         ContourApproximationModes.ApproxSimple
                     );
 
-                    // Find the two rectangles closest to the center of the captured region
                     Rect? bestRect = null;
                     Rect? secondBestRect = null;
                     double bestDist = double.MaxValue;
@@ -166,22 +167,25 @@ namespace Jido.Services
                     {
                         if (Cv2.ContourArea(contour) < cfg.MinArea)
                             continue;
-
+                        // Try to approximate the contour to a polygon
                         Point[] approx = Cv2.ApproxPolyDP(contour, cfg.Epsilon, true);
                         if (approx.Length != 4 || !Cv2.IsContourConvex(approx))
                             continue;
 
                         Rect br = Cv2.BoundingRect(approx);
                         double ar = (double)br.Width / br.Height;
+                        // Has to be wider than high
                         if (ar < 1.0 || ar > cfg.MaxAspectRatio)
                             continue;
 
                         double cx = br.X + br.Width / 2.0;
                         double cy = br.Y + br.Height / 2.0;
+                        // Distance between the rectangle and the center of the screen
                         double dist = Math.Sqrt(
                             (cx - imageCenterX) * (cx - imageCenterX) + (cy - imageCenterY) * (cy - imageCenterY)
                         );
 
+                        // Find the two rectangles closest to the center of the captured region
                         if (dist < bestDist)
                         {
                             secondBestDist = bestDist;
@@ -198,7 +202,7 @@ namespace Jido.Services
 
                     sw.Stop();
 
-                    // Exponential smoothing
+                    // Exponential smoothing for elasped counter
                     double elapsed = sw.Elapsed.TotalMilliseconds;
                     _averageCycleMs = _averageCycleMs == 0 ? elapsed : 0.1 * elapsed + (1 - 0.1) * _averageCycleMs;
                     AverageCycleMsUpdated?.Invoke(this, _averageCycleMs);
@@ -209,6 +213,7 @@ namespace Jido.Services
                         double centerX = br.X + br.Width / 2.0;
                         double centerY = br.Y + br.Height / 2.0;
 
+                        // If the best rect moved -> we moved
                         double displacement = hasPrevRect
                             ? Math.Sqrt(Math.Pow(centerX - prevCenterX, 2) + Math.Pow(centerY - prevCenterY, 2))
                             : 0;
@@ -233,11 +238,15 @@ namespace Jido.Services
                                 ) < sameRectTolerancePx;
 
                             bool skipBest = justStopped || bestIsLastClicked;
+                            // If we don't click the best rect, we fall back to the second best
                             Rect? targetRect = skipBest ? secondBestRect : bestRect;
 
                             if (targetRect.HasValue)
                             {
+                                cancellationToken.ThrowIfCancellationRequested();
+
                                 var tr = targetRect.Value;
+                                // Click somewhere random in the rect
                                 int clickX = captureX + rng.Next(tr.X, tr.X + tr.Width);
                                 int clickY = captureY + rng.Next(tr.Y, tr.Y + tr.Height);
 
@@ -248,7 +257,8 @@ namespace Jido.Services
                                 await SimulationUtils.MouseMoveAndClickAsync(
                                     (short)clickX,
                                     (short)clickY,
-                                    moveDurationMs: 50
+                                    moveDurationMs: 50,
+                                    cancellationToken
                                 );
                                 Status = ServiceStatus.IDLE;
                             }
@@ -256,6 +266,7 @@ namespace Jido.Services
                     }
                     else
                     {
+                        // No rect -> everything was probably clicked, reset everything
                         hasPrevRect = false;
                         wasMoving = false;
                         lastClickedCenterX = -1;
@@ -263,7 +274,7 @@ namespace Jido.Services
                         if (Status != ServiceStatus.IDLE)
                             Status = ServiceStatus.IDLE;
                     }
-
+                    // Rate limit to avoid too much resource consumption
                     await Task.Delay(cfg.CycleDelayMs, cancellationToken);
                 }
             }

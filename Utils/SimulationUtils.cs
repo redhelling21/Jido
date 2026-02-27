@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using SharpHook;
 using SharpHook.Data;
@@ -24,22 +25,12 @@ namespace Jido.Utils
             public int Y;
         }
 
-        // Quadratic Bezier: P0 → P1 (control) → P2
-        private static (double x, double y) Bezier(
-            double p0x,
-            double p0y,
-            double p1x,
-            double p1y,
-            double p2x,
-            double p2y,
-            double t
+        public static async Task MouseMoveAndClickAsync(
+            short x,
+            short y,
+            int moveDurationMs = 30,
+            CancellationToken cancellationToken = default
         )
-        {
-            double mt = 1 - t;
-            return (mt * mt * p0x + 2 * mt * t * p1x + t * t * p2x, mt * mt * p0y + 2 * mt * t * p1y + t * t * p2y);
-        }
-
-        public static async Task MouseMoveAndClickAsync(short x, short y, int moveDurationMs = 30)
         {
             if (moveDurationMs > 0)
             {
@@ -47,9 +38,11 @@ namespace Jido.Utils
 
                 int steps = Math.Max(10, moveDurationMs / 10);
                 int stepDelay = moveDurationMs / steps;
-
+                // Split the movement into small steps
                 for (int i = 1; i <= steps; i++)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     double t = (double)i / steps;
                     // Smoothstep easing
                     double eased = t * t * (3 - 2 * t);
@@ -63,14 +56,15 @@ namespace Jido.Utils
                     cy += (_rng.NextDouble() - 0.5) * jitter;
 
                     _simulator.SimulateMouseMovement((short)cx, (short)cy);
-                    await Task.Delay(stepDelay);
+                    await Task.Delay(stepDelay, cancellationToken);
                 }
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             _simulator.SimulateMouseMovement(x, y);
-            await Task.Delay(50);
+            await Task.Delay(50, cancellationToken);
             _simulator.SimulateMousePress(MouseButton.Button1);
-            await Task.Delay(50);
+            await Task.Delay(50, cancellationToken);
             _simulator.SimulateMouseRelease(MouseButton.Button1);
         }
     }
