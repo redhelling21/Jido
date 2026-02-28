@@ -7,6 +7,7 @@ using System.Timers;
 using Jido.Config;
 using Jido.Models;
 using Jido.Utils;
+using Microsoft.Extensions.Logging;
 using SharpHook;
 using SharpHook.Data;
 
@@ -14,6 +15,7 @@ namespace Jido.Services
 {
     public class AutopressService : BaseToggleableService, IAutopressService
     {
+        private readonly ILogger<AutopressService> _logger;
         private EventSimulator _eventSimulator = new EventSimulator();
         private CancellationTokenSource _cancellationTokenSource;
         private readonly System.Timers.Timer _suspendTimer = new() { AutoReset = false };
@@ -27,7 +29,8 @@ namespace Jido.Services
             IHooksManager keyHooksManager,
             JidoConfig config,
             IMacroService macroService,
-            IServiceHub serviceHub
+            IServiceHub serviceHub,
+            ILogger<AutopressService> logger
         )
             : base(
                 keyHooksManager,
@@ -38,6 +41,7 @@ namespace Jido.Services
                 ServiceNames.Autopress
             )
         {
+            _logger = logger;
             InitFromConfig();
             _suspendTimer.Elapsed += OnSuspendTimerElapsed;
             _keyHooksManager.RegisterMouseClick(MouseButton.Button1, SuspendAutoPress);
@@ -60,13 +64,11 @@ namespace Jido.Services
                 StartRoutine();
             else
             {
+                // Stop the suspend timer first so OnSuspendTimerElapsed cannot race and restart the routine
                 _suspendTimer.Stop();
-                if (Status == ServiceStatus.PAUSED)
-                    // The routine is already stopped (StopRoutine was called by SuspendAutoPress),
-                    // so we only need to cancel the pending resume and update the status.
+                StopRoutine();
+                if (Status != ServiceStatus.STOPPED)
                     Status = ServiceStatus.STOPPED;
-                else
-                    StopRoutine();
             }
         }
 
@@ -180,6 +182,11 @@ namespace Jido.Services
                 }
             }
             catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled exception in KeyPressRoutine; stopping service.");
+                StopRoutine();
+            }
         }
 
         protected override void PersistToggleKey(KeyCode key) => _config.Features.Autopress.ToggleKey = key;

@@ -30,14 +30,18 @@
             <TextBlock Margin="0,15,0,5" FontSize="16" FontWeight="Bold" Text="Configuration" />
             <Grid ColumnDefinitions="Auto, 5, *, 5, Auto" RowDefinitions="Auto, 5, Auto, 5, Auto">
                 <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
-                           VerticalAlignment="Center" Text="Max clicks/s" />
+                           VerticalAlignment="Center" Text="Cycle delay" />
                 <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
-                         Text="{Binding MaxClicksPerSecond}" />
+                         Text="{Binding CycleDelayMs}" />
+                <TextBlock Grid.Row="0" Grid.Column="4" HorizontalAlignment="Left"
+                           VerticalAlignment="Center" Text="ms" />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
                            VerticalAlignment="Center" Text="Capture ratio" />
                 <TextBox Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"
-                         Text="{Binding CaptureRatio}" />
+                         Text="{Binding CaptureRatioPercent}" />
+                <TextBlock Grid.Row="2" Grid.Column="4" HorizontalAlignment="Left"
+                           VerticalAlignment="Center" Text="%" />
 
                 <Button Grid.Row="4" Grid.Column="4" HorizontalAlignment="Right"
                         Command="{Binding SaveAutolootConfigCommand}">
