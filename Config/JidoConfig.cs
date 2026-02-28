@@ -160,9 +160,12 @@ public class AutopressConfig
 
 public class InventoryManagementConfig
 {
+    public const int GridWidth = 12;
+    public const int GridHeight = 5;
+
     public int InventoryWidth { get; set; } = 600;
     public int InventoryHeight { get; set; } = 250;
     public int[] InventoryPosition { get; set; } = { 1000, 1000 };
-    public bool[][] InventorySlots { get; set; } = new bool[12][];
+    public bool[][] InventorySlots { get; set; } = new bool[GridWidth][];
     public KeyCode EmptyInventoryKey { get; set; } = KeyCode.VcF4;
 }

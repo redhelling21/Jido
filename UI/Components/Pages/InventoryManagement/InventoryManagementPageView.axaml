@@ -41,12 +41,12 @@
                     <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                                VerticalAlignment="Center" Text="Key" />
                     <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
-                             Text="{Binding EmptyInventoryKey}" />
+                             Text="{Binding EmptyInventoryKey, Converter={StaticResource KeyCodeConverter}}" />
                     <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
                                VerticalAlignment="Center" Text="Layout" />
                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Command="{Binding ConfigureInventoryLayoutCommand}" Content="{Binding InventoryConfigButtonText}"></Button>
                 </Grid>
-                <Button Command="{Binding SaveConfigCommand}>">
+                <Button Command="{Binding SaveConfigCommand}" Margin="0, 10, 0, 0">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />

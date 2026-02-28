@@ -83,9 +83,10 @@ namespace Jido.UI.Components.Pages.Logs
 
         private void OnEntryAdded(LogEntry entry)
         {
-            var vm = new LogEntryViewModel(entry);
+            // LogEntryViewModel allocates a SolidColorBrush, which must happen on the UI thread.
             Dispatcher.UIThread.Post(() =>
             {
+                var vm = new LogEntryViewModel(entry);
                 _allEntries.Add(vm);
                 if (IsVisible(vm))
                     DisplayedEntries.Add(vm);

@@ -1,59 +1,353 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Jido.Config;
-using Jido.Models;
 using Jido.Utils;
+using Microsoft.Extensions.Logging;
+using OpenCvSharp;
 using SharpHook;
 using SharpHook.Data;
 
 namespace Jido.Services
 {
-    public class InventoryManagementService : IInventoryManagementService
+    public class InventoryManagementService : BaseToggleableService, IInventoryManagementService
     {
-        private IHooksManager _keyHooksManager;
-        private JidoConfig _config;
+        private static readonly EventSimulator _simulator = new EventSimulator();
+
+        // How similar a cell must be to the empty reference to be considered empty.
+        private const double EmptyCheckRmsThreshold = 40.0;
+
+        // How different a cell must be from the initial snapshot to be considered "changed" since
+        // the routine started
+        private const double ChangeCheckRmsThreshold = 15.0;
+
+        private readonly ILogger<InventoryManagementService> _logger;
+
+        private CancellationTokenSource? _cts;
+
+        // Empty-inventory reference image (always 3-channel BGR), guarded by _referenceLock.
+        private readonly object _referenceLock = new();
+
+        private Mat? _emptyReference;
+
+        private string EmptyReferencePath =>
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "empty_inventory_reference.png");
+
         public InventoryManagementConfig Config => _config.Features.InventoryManagement;
-        private ServiceStatus _status = ServiceStatus.STOPPED;
 
-        public ServiceStatus Status
+        public InventoryManagementService(
+            IHooksManager keyHooksManager,
+            JidoConfig config,
+            IMacroService macroService,
+            IServiceHub serviceHub,
+            ILogger<InventoryManagementService> logger
+        )
+            : base(
+                keyHooksManager,
+                config,
+                macroService,
+                config.Features.InventoryManagement.EmptyInventoryKey,
+                serviceHub,
+                ServiceNames.InventoryManagement
+            )
         {
-            get { return _status; }
-            set
+            _logger = logger;
+            LoadReferenceFromDisk();
+        }
+
+        private void LoadReferenceFromDisk()
+        {
+            if (File.Exists(EmptyReferencePath))
             {
-                _status = value;
-                StatusChanged?.Invoke(this, value);
+                // Get the saved empty inventory image
+                lock (_referenceLock)
+                {
+                    _emptyReference?.Dispose();
+                    _emptyReference = Cv2.ImRead(EmptyReferencePath, ImreadModes.Color);
+                    _logger.LogDebug(
+                        "Empty reference loaded from disk ({W}x{H}, {Ch}ch)",
+                        _emptyReference.Width,
+                        _emptyReference.Height,
+                        _emptyReference.Channels()
+                    );
+                }
             }
-        }
-
-        public event EventHandler<ServiceStatus> StatusChanged;
-
-        public InventoryManagementService(IHooksManager keyHooksManager, JidoConfig config, IServiceHub serviceHub)
-        {
-            _keyHooksManager = keyHooksManager;
-            _config = config;
-            serviceHub.Register(ServiceNames.InventoryManagement, this);
-            InitFromConfig();
-        }
-
-        private void InitFromConfig()
-        {
         }
 
         public void UpdateConfig(InventoryManagementConfig config)
         {
+            // Preserve the current toggle key — key changes must go through ChangeToggleKey().
+            config.EmptyInventoryKey = ToggleKey;
             _config.Features.InventoryManagement = config;
             _config.Persist();
-            InitFromConfig();
+        }
+
+        // Save a screenshot of the (hopefully) empty inventory to use as reference
+        public void CaptureAndSaveEmptyReference()
+        {
+            var cfg = Config;
+            var region = new System.Drawing.Rectangle(
+                cfg.InventoryPosition[0],
+                cfg.InventoryPosition[1],
+                cfg.InventoryWidth,
+                cfg.InventoryHeight
+            );
+
+            using var raw = ScreenUtils.CaptureScreen(region);
+
+            // Normalise to 3-channel BGR to match what Cv2.ImRead returns loading the file afterwards
+            var bgr = EnsureBgr(raw);
+
+            Cv2.ImWrite(EmptyReferencePath, bgr);
+            _logger.LogDebug(
+                "Empty inventory reference saved ({W}x{H}, {Ch}ch, at {X},{Y})",
+                bgr.Width,
+                bgr.Height,
+                bgr.Channels(),
+                cfg.InventoryPosition[0],
+                cfg.InventoryPosition[1]
+            );
+
+            lock (_referenceLock)
+            {
+                _emptyReference?.Dispose();
+                _emptyReference = bgr;
+            }
+        }
+
+        public override void Toggle()
+        {
+            if (Status == ServiceStatus.WORKING)
+            {
+                StopRoutine();
+                return;
+            }
+
+            if (_macroService.Status == ServiceStatus.STOPPED)
+                return;
+
+            _cts = new CancellationTokenSource();
+            _ = Task.Run(() => EmptyInventoryRoutine(_cts.Token));
+        }
+
+        protected override void StopRoutine()
+        {
+            _cts?.Cancel();
+            Status = ServiceStatus.STOPPED;
+        }
+
+        protected override void PersistToggleKey(KeyCode key) =>
+            _config.Features.InventoryManagement.EmptyInventoryKey = key;
+
+        public override void Dispose()
+        {
+            _cts?.Dispose();
+            lock (_referenceLock)
+            {
+                _emptyReference?.Dispose();
+                _emptyReference = null;
+            }
+            base.Dispose();
+        }
+
+        // Helpers
+
+        private static Mat EnsureBgr(Mat src)
+        {
+            if (src.Channels() == 3)
+                return src;
+
+            var dst = new Mat();
+            Cv2.CvtColor(src, dst, ColorConversionCodes.BGRA2BGR);
+            src.Dispose();
+            return dst;
+        }
+
+        // Difference between two mats (to check if they are similar enough)
+        private static double CellRms(Mat a, Mat b) =>
+            Cv2.Norm(a, b, NormTypes.L2) / Math.Sqrt(a.Rows * a.Cols * a.Channels());
+
+        // ── Routine ──────────────────────────────────────────────────────────
+
+        private async Task EmptyInventoryRoutine(CancellationToken cancellationToken)
+        {
+            try
+            {
+                Status = ServiceStatus.WORKING;
+
+                var cfg = Config;
+                var inventoryRegion = new System.Drawing.Rectangle(
+                    cfg.InventoryPosition[0],
+                    cfg.InventoryPosition[1],
+                    cfg.InventoryWidth,
+                    cfg.InventoryHeight
+                );
+
+                int cellW = cfg.InventoryWidth / InventoryManagementConfig.GridWidth;
+                int cellH = cfg.InventoryHeight / InventoryManagementConfig.GridHeight;
+
+                // Clone the reference for thread-safety
+                Mat? reference;
+                lock (_referenceLock)
+                    reference = _emptyReference?.Clone();
+
+                // Check that we have a correct empty inventory reference
+                bool hasReference =
+                    reference != null
+                    && !reference.Empty()
+                    && reference.Width == cfg.InventoryWidth
+                    && reference.Height == cfg.InventoryHeight
+                    && reference.Channels() == 3;
+
+                _logger.LogInformation(
+                    "EmptyInventory started — hasReference={HasRef} ({W}x{H})",
+                    hasReference,
+                    reference?.Width ?? 0,
+                    reference?.Height ?? 0
+                );
+
+                if (!hasReference)
+                    _logger.LogWarning("No valid empty reference found.");
+
+                using var captureBitmap = new Bitmap(
+                    cfg.InventoryWidth,
+                    cfg.InventoryHeight,
+                    PixelFormat.Format32bppRgb
+                );
+
+                // Get an initial screenshot to see when inv. slots content changes (generally after
+                // it was clicked)
+                using Mat initialMat = EnsureBgr(ScreenUtils.CaptureScreen(inventoryRegion, captureBitmap));
+                // Remember which slot we already clicked
+                var clicked = new bool[InventoryManagementConfig.GridWidth, InventoryManagementConfig.GridHeight];
+
+                try
+                {
+                    // Press CTRL at the beginning
+                    _simulator.SimulateKeyPress(KeyCode.VcLeftControl);
+                    for (int row = 0; row < InventoryManagementConfig.GridHeight; row++)
+                    {
+                        for (int col = 0; col < InventoryManagementConfig.GridWidth; col++)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            // Was configured as not clickable ?
+                            bool isProtected =
+                                cfg.InventorySlots != null
+                                && col < cfg.InventorySlots.Length
+                                && cfg.InventorySlots[col] != null
+                                && row < cfg.InventorySlots[col].Length
+                                && cfg.InventorySlots[col][row];
+
+                            if (isProtected || clicked[col, row])
+                                continue;
+
+                            // Avoid looking too close to the borders of the slot (apply a 20% margin)
+                            int marginX = cellW / 5;
+                            int marginY = cellH / 5;
+                            var cellRect = new OpenCvSharp.Rect(
+                                col * cellW + marginX,
+                                row * cellH + marginY,
+                                cellW - 2 * marginX,
+                                cellH - 2 * marginY
+                            );
+                            using var initialCell = new Mat(initialMat, cellRect);
+
+                            if (hasReference)
+                            {
+                                // Compare slot to empty inv. reference to see if it was empty from
+                                // the beginning
+                                using var referenceCell = new Mat(reference!, cellRect);
+                                double emptyRms = CellRms(initialCell, referenceCell);
+                                if (emptyRms <= EmptyCheckRmsThreshold)
+                                {
+                                    // Skip it
+                                    _logger.LogDebug(
+                                        "Cell ({Col},{Row}): empty at start (RMS={Rms:F1} ≤ {Thr}), skipping",
+                                        col,
+                                        row,
+                                        emptyRms,
+                                        EmptyCheckRmsThreshold
+                                    );
+                                    continue;
+                                }
+                            }
+
+                            // Actualize the content of the slot
+                            using Mat currentRaw = ScreenUtils.CaptureScreen(inventoryRegion, captureBitmap);
+                            using Mat currentMat = EnsureBgr(currentRaw);
+                            using var currentCell = new Mat(currentMat, cellRect);
+                            double changeRms = CellRms(currentCell, initialCell);
+                            if (changeRms > ChangeCheckRmsThreshold)
+                            {
+                                // Slot content changed since the start of the routine It may have
+                                // been part of an already clicked multi-slot object, etc... => skip it
+                                _logger.LogDebug(
+                                    "Cell ({Col},{Row}): changed from initial (RMS={Rms:F1} > {Thr}), skipping",
+                                    col,
+                                    row,
+                                    changeRms,
+                                    ChangeCheckRmsThreshold
+                                );
+                                continue;
+                            }
+
+                            // Finally, a slot that we can click !
+                            int screenX = cfg.InventoryPosition[0] + col * cellW + cellW / 2;
+                            int screenY = cfg.InventoryPosition[1] + row * cellH + cellH / 2;
+
+                            _logger.LogDebug(
+                                "Cell ({Col},{Row}): clicking (changeRms={ChangeRms:F1})",
+                                col,
+                                row,
+                                changeRms
+                            );
+
+                            await SimulationUtils.MouseMoveAndClickAsync(
+                                (short)screenX,
+                                (short)screenY,
+                                left: true,
+                                moveDurationMs: 30,
+                                cancellationToken
+                            );
+
+                            clicked[col, row] = true;
+                            await Task.Delay(80, cancellationToken);
+                        }
+                    }
+                }
+                finally
+                {
+                    // Always release the ctrl key
+                    _simulator.SimulateKeyRelease(KeyCode.VcLeftControl);
+                    reference?.Dispose();
+                }
+
+                _logger.LogInformation("EmptyInventory completed");
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("EmptyInventory cancelled");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled exception in EmptyInventoryRoutine");
+            }
+            finally
+            {
+                Status = ServiceStatus.STOPPED;
+            }
         }
     }
 
-    public interface IInventoryManagementService : IServiceWithStatus
+    public interface IInventoryManagementService : IServiceWithStatus, IToggleableService
     {
-        public InventoryManagementConfig Config { get; }
+        InventoryManagementConfig Config { get; }
 
-        public void UpdateConfig(InventoryManagementConfig config);
+        void UpdateConfig(InventoryManagementConfig config);
+
+        void CaptureAndSaveEmptyReference();
     }
 }
