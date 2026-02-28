@@ -37,7 +37,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
 
             Width = data.InventoryWidth;
             Height = data.InventoryHeight + TitleBarHeight;
-            Position = new PixelPoint(data.InventoryPosition[0], data.InventoryPosition[1]);
+            Position = new PixelPoint(data.InventoryPosition[0], data.InventoryPosition[1] - TitleBarHeight);
 
             Content = BuildContent();
         }
@@ -49,7 +49,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
                 InventoryWidth = (int)ClientSize.Width,
                 InventoryHeight = (int)ClientSize.Height - TitleBarHeight,
                 InventorySlots = _cells,
-                InventoryPosition = [Position.X, Position.Y],
+                InventoryPosition = [Position.X, Position.Y + TitleBarHeight],
             };
         }
 

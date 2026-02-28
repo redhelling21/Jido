@@ -170,8 +170,6 @@ namespace Jido.Services
         private static double CellRms(Mat a, Mat b) =>
             Cv2.Norm(a, b, NormTypes.L2) / Math.Sqrt(a.Rows * a.Cols * a.Channels());
 
-        // ── Routine ──────────────────────────────────────────────────────────
-
         private async Task EmptyInventoryRoutine(CancellationToken cancellationToken)
         {
             try
