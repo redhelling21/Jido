@@ -124,7 +124,7 @@ namespace Jido.Services
                         wasMoving = false;
                         lastClickedCenterX = -1;
                         lastClickedCenterY = -1;
-                        if (Status != ServiceStatus.IDLE)
+                        if (!cancellationToken.IsCancellationRequested && Status != ServiceStatus.IDLE)
                             Status = ServiceStatus.IDLE;
                         await Task.Delay(100, cancellationToken);
                         continue;
@@ -253,14 +253,16 @@ namespace Jido.Services
                                 lastClickedCenterX = tr.X + tr.Width / 2.0;
                                 lastClickedCenterY = tr.Y + tr.Height / 2.0;
 
-                                Status = ServiceStatus.WORKING;
+                                if (!cancellationToken.IsCancellationRequested)
+                                    Status = ServiceStatus.WORKING;
                                 await SimulationUtils.MouseMoveAndClickAsync(
                                     (short)clickX,
                                     (short)clickY,
                                     moveDurationMs: 50,
                                     cancellationToken
                                 );
-                                Status = ServiceStatus.IDLE;
+                                if (!cancellationToken.IsCancellationRequested)
+                                    Status = ServiceStatus.IDLE;
                             }
                         }
                     }
@@ -271,7 +273,7 @@ namespace Jido.Services
                         wasMoving = false;
                         lastClickedCenterX = -1;
                         lastClickedCenterY = -1;
-                        if (Status != ServiceStatus.IDLE)
+                        if (!cancellationToken.IsCancellationRequested && Status != ServiceStatus.IDLE)
                             Status = ServiceStatus.IDLE;
                     }
                     // Rate limit to avoid too much resource consumption
