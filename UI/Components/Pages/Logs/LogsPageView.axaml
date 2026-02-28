@@ -1,0 +1,55 @@
+<UserControl x:Class="Jido.UI.Components.Pages.Logs.LogsPageView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:common="using:Jido.UI.Components.Common"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Jido.UI.Components.Pages.Logs"
+             d:DesignHeight="450" d:DesignWidth="800"
+             x:CompileBindings="True" x:DataType="vm:LogsPageViewModel"
+             mc:Ignorable="d">
+    <Design.DataContext>
+        <vm:LogsPageViewModel />
+    </Design.DataContext>
+    <common:PageWithHeader Title="Logs" Subtitle="Application logs output">
+        <DockPanel>
+
+            <!--  Toolbar  -->
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                <Button DockPanel.Dock="Right" Command="{Binding ClearCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <i:Icon Margin="0,0,5,0" Value="fa fa-trash" />
+                        <TextBlock Text="Clear" />
+                    </StackPanel>
+                </Button>
+                <StackPanel Orientation="Horizontal" Spacing="15" VerticalAlignment="Center">
+                    <CheckBox Content="Debug" IsChecked="{Binding ShowDebug}" />
+                    <CheckBox Content="Info" IsChecked="{Binding ShowInfo}" />
+                    <CheckBox Content="Warning" IsChecked="{Binding ShowWarning}" />
+                    <CheckBox Content="Error" IsChecked="{Binding ShowError}" />
+                </StackPanel>
+            </DockPanel>
+
+            <!--  Log list  -->
+            <Border Background="#F5F5F5" CornerRadius="5" Padding="8" Margin="0,0,0,15">
+                <ScrollViewer Name="LogScrollViewer"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding DisplayedEntries}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:LogEntryViewModel">
+                                <TextBlock Text="{Binding Text}"
+                                           Foreground="{Binding Foreground}"
+                                           FontFamily="Consolas,Courier New,monospace"
+                                           FontSize="12"
+                                           TextWrapping="NoWrap" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+        </DockPanel>
+    </common:PageWithHeader>
+</UserControl>

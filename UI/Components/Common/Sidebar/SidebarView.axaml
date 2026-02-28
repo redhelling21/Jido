@@ -9,7 +9,7 @@
     <Design.DataContext>
         <vm:SidebarViewModel />
     </Design.DataContext>
-    <Grid Background="{DynamicResource Highlight500}" RowDefinitions=" Auto, *, 50">
+    <Grid Background="{DynamicResource Highlight500}" RowDefinitions=" Auto, *, 70">
 
         <Border Grid.Row="1" Padding="10" Classes="menuitems">
             <StackPanel>
@@ -35,8 +35,11 @@
                                          Status="{Binding InventoryManagementStatus}" />
             </StackPanel>
         </Border>
-        <!--<Border Grid.Row="2" HorizontalAlignment="Left">
-        <Image Margin="10,0,0,10" Source="avares://Jido/UI/Assets/Images/logo.png" />
-        </Border>-->
+        <Border Grid.Row="2" Padding="10,10">
+            <sidebar:SidebarMenuItem Click="SetActiveState"
+                                     Command="{Binding NavigateTo}"
+                                     CommandParameter="{Binding $self.Path}"
+                                     MenuIcon="fa fa-scroll" MenuName="Logs" Path="Logs" />
+        </Border>
     </Grid>
 </UserControl>
