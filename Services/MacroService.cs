@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Jido.Config;
 using Jido.Utils;
+using Microsoft.Extensions.Logging;
 using SharpHook.Data;
 
 namespace Jido.Services
@@ -13,6 +14,7 @@ namespace Jido.Services
     {
         private readonly IHooksManager _keyHooksManager;
         private readonly JidoConfig _config;
+        private readonly ILogger<MacroService> _logger;
         private KeyCode _toggleKey;
 
         public KeyCode ToggleKey => _toggleKey;
@@ -31,10 +33,11 @@ namespace Jido.Services
 
         public event EventHandler<ServiceStatus> StatusChanged;
 
-        public MacroService(IHooksManager keyHooksManager, JidoConfig config, IServiceHub serviceHub)
+        public MacroService(IHooksManager keyHooksManager, JidoConfig config, IServiceHub serviceHub, ILogger<MacroService> logger)
         {
             _keyHooksManager = keyHooksManager;
             _config = config;
+            _logger = logger;
             _toggleKey = _config.ToggleKey;
             _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
             serviceHub.Register(ServiceNames.Macro, this);
@@ -42,7 +45,16 @@ namespace Jido.Services
 
         public void Toggle()
         {
-            Status = Status == ServiceStatus.STOPPED ? ServiceStatus.IDLE : ServiceStatus.STOPPED;
+            if (Status == ServiceStatus.STOPPED)
+            {
+                _logger.LogInformation("Macro started");
+                Status = ServiceStatus.IDLE;
+            }
+            else
+            {
+                _logger.LogInformation("Macro stopped");
+                Status = ServiceStatus.STOPPED;
+            }
         }
 
         public async Task<KeyCode> ChangeToggleKey()

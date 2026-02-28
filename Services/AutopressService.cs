@@ -61,9 +61,13 @@ namespace Jido.Services
                 return;
 
             if (Status == ServiceStatus.STOPPED)
+            {
+                _logger.LogInformation("Autopress started");
                 StartRoutine();
+            }
             else
             {
+                _logger.LogInformation("Autopress stopped");
                 // Stop the suspend timer first so OnSuspendTimerElapsed cannot race and restart the routine
                 _suspendTimer.Stop();
                 StopRoutine();

@@ -9,6 +9,7 @@ using Jido.UI.Components.Pages.Autopress;
 using Jido.UI.Components;
 using Jido.UI.Components.Pages.Home;
 using Jido.UI.Components.Pages.InventoryManagement;
+using Jido.UI.Components.Pages.Logs;
 
 namespace Jido.UI.Routing
 {
@@ -30,6 +31,7 @@ namespace Jido.UI.Routing
                 { "Autoloot", typeof(AutolootPageViewModel) },
                 { "Autopress", typeof(AutopressPageViewModel) },
                 { "InventoryManagement", typeof(InventoryManagementPageViewModel) },
+                { "Logs", typeof(LogsPageViewModel) },
             };
         }
 

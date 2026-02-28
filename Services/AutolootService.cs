@@ -53,16 +53,20 @@ namespace Jido.Services
             {
                 if (_macroService.Status == ServiceStatus.STOPPED)
                     return;
+                _logger.LogInformation("Autoloot started");
                 _cancellationTokenSource = new CancellationTokenSource();
                 Status = ServiceStatus.IDLE;
                 _ = Task.Run(() => AutolootRoutine(_cancellationTokenSource.Token));
             }
             else
+            {
                 StopRoutine();
+            }
         }
 
         protected override void StopRoutine()
         {
+            _logger.LogInformation("Autoloot stopped");
             _cancellationTokenSource?.Cancel();
             Status = ServiceStatus.STOPPED;
         }
