@@ -15,7 +15,7 @@ namespace Jido.UI.Components.Pages.Autoloot
         private int _cycleDelayMs;
 
         [ObservableProperty]
-        private double _captureRatio;
+        private int _captureRatioPercent;
 
         [ObservableProperty]
         private string _avgCycleMs = "—";
@@ -27,7 +27,7 @@ namespace Jido.UI.Components.Pages.Autoloot
         {
             _autolootService = autolootService;
             CycleDelayMs = autolootService.CycleDelayMs;
-            CaptureRatio = autolootService.CaptureRatio;
+            CaptureRatioPercent = (int)Math.Round(autolootService.CaptureRatio * 100);
             autolootService.AverageCycleMsUpdated += OnAverageCycleMsUpdated;
         }
 
@@ -37,7 +37,7 @@ namespace Jido.UI.Components.Pages.Autoloot
         [RelayCommand]
         private void SaveAutolootConfig()
         {
-            _autolootService?.UpdateConfig(CycleDelayMs, CaptureRatio);
+            _autolootService?.UpdateConfig(CycleDelayMs, CaptureRatioPercent / 100.0);
         }
 
         public void Dispose()

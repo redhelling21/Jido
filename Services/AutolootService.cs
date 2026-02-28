@@ -100,6 +100,7 @@ namespace Jido.Services
                 // Movement detection: skip clicks while the character is walking toward loot
                 const double movingThresholdPx = 10.0;
                 const double sameRectTolerancePx = 10.0;
+
                 bool hasPrevRect = false;
                 bool wasMoving = false;
                 double prevCenterX = 0,
@@ -246,9 +247,11 @@ namespace Jido.Services
                                 cancellationToken.ThrowIfCancellationRequested();
 
                                 var tr = targetRect.Value;
-                                // Click somewhere random in the rect
-                                int clickX = captureX + rng.Next(tr.X, tr.X + tr.Width);
-                                int clickY = captureY + rng.Next(tr.Y, tr.Y + tr.Height);
+                                // Click within the inner 50% of the rect (25% margin on each side)
+                                int marginX = tr.Width / 4;
+                                int marginY = tr.Height / 4;
+                                int clickX = captureX + rng.Next(tr.X + marginX, tr.X + tr.Width - marginX);
+                                int clickY = captureY + rng.Next(tr.Y + marginY, tr.Y + tr.Height - marginY);
 
                                 lastClickedCenterX = tr.X + tr.Width / 2.0;
                                 lastClickedCenterY = tr.Y + tr.Height / 2.0;
