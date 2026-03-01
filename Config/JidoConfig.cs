@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Jido.Models;
+using Jido.Utils;
 using Microsoft.Extensions.Logging;
 using OpenCvSharp;
-using SharpHook.Data;
 using static Jido.Models.CompositeHighLevelCommand;
 
 namespace Jido.Config;
@@ -109,7 +109,7 @@ public class JidoConfig
     public ScreenConfig Screen { get; set; } = new();
     public FeaturesConfig Features { get; set; } = new();
 
-    public KeyCode ToggleKey { get; set; } = KeyCode.VcF7;
+    public KeyCombo ToggleKey { get; set; } = new(SharpHook.Data.KeyCode.VcF7);
 
     #endregion Properties
 }
@@ -129,7 +129,7 @@ public class FeaturesConfig
 
 public class AutolootConfig
 {
-    public KeyCode ToggleKey { get; set; } = KeyCode.VcF3;
+    public KeyCombo ToggleKey { get; set; } = new(SharpHook.Data.KeyCode.VcF3);
 
     public List<Color> Colors { get; set; } =
         new List<Color>()
@@ -151,7 +151,7 @@ public class AutolootConfig
 
 public class AutopressConfig
 {
-    public KeyCode ToggleKey { get; set; } = KeyCode.VcQ;
+    public KeyCombo ToggleKey { get; set; } = new(SharpHook.Data.KeyCode.VcQ);
     public int ClickDelay { get; set; } = 1200;
     public double IntervalRandomizationRatio { get; set; } = 0.1;
     public List<HighLevelCommand> ScheduledCommands { get; set; } = new();
@@ -167,5 +167,5 @@ public class InventoryManagementConfig
     public int InventoryHeight { get; set; } = 250;
     public int[] InventoryPosition { get; set; } = { 1000, 1000 };
     public bool[][] InventorySlots { get; set; } = new bool[GridWidth][];
-    public KeyCode EmptyInventoryKey { get; set; } = KeyCode.VcF4;
+    public KeyCombo EmptyInventoryKey { get; set; } = new(SharpHook.Data.KeyCode.VcF4);
 }

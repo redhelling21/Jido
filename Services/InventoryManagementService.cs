@@ -139,8 +139,8 @@ namespace Jido.Services
             Status = ServiceStatus.STOPPED;
         }
 
-        protected override void PersistToggleKey(KeyCode key) =>
-            _config.Features.InventoryManagement.EmptyInventoryKey = key;
+        protected override void PersistToggleCombo(KeyCombo combo) =>
+            _config.Features.InventoryManagement.EmptyInventoryKey = combo;
 
         public override void Dispose()
         {

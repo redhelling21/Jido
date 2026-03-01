@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Jido.Services;
-using SharpHook.Data;
+using Jido.Utils;
 
 namespace Jido.UI.Components
 {
@@ -14,7 +14,7 @@ namespace Jido.UI.Components
         private string changeKeyButtonText = "Change";
 
         [ObservableProperty]
-        private KeyCode toggleKey;
+        private KeyCombo toggleKey;
 
         protected ToggleablePageViewModel() { }
 

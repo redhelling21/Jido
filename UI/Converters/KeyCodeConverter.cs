@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Data.Converters;
+using Jido.Utils;
 using SharpHook.Data;
 
 namespace Jido.UI.Converters
@@ -15,6 +16,9 @@ namespace Jido.UI.Converters
 
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
+            if (value is KeyCombo combo)
+                return combo.ToString();
+
             if (value is KeyCode keyCode)
             {
                 var name = keyCode.ToString();
@@ -27,15 +31,8 @@ namespace Jido.UI.Converters
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is string input)
-            {
-                var candidate = input.StartsWith("Vc", StringComparison.OrdinalIgnoreCase)
-                    ? input
-                    : "Vc" + char.ToUpper(input[0]) + input[1..]; // "b" -> "VcB"
-
-                if (Enum.TryParse<KeyCode>(candidate, ignoreCase: true, out var keyCode))
-                    return keyCode;
-            }
-            return KeyCode.VcUndefined;
+                return KeyCombo.Parse(input);
+            return new KeyCombo(KeyCode.VcUndefined);
         }
     }
 }

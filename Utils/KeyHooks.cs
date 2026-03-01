@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using SharpHook;
 using SharpHook.Data;
@@ -12,60 +9,80 @@ namespace Jido.Utils
     public class HooksManager : IHooksManager
     {
         private TaskPoolGlobalHook _hook = new();
-        public Dictionary<KeyCode, EventHandler> _keyPressedEvents = new();
+        private readonly Dictionary<KeyCombo, EventHandler> _comboEvents = new();
+        private readonly HashSet<KeyCode> _pressedKeys = new();
         public Dictionary<MouseButton, List<EventHandler>> _mouseClickedEvents = new();
+
+        private static readonly HashSet<KeyCode> ModifierKeyCodes =
+            new()
+            {
+                KeyCode.VcLeftControl,
+                KeyCode.VcRightControl,
+                KeyCode.VcLeftAlt,
+                KeyCode.VcRightAlt,
+                KeyCode.VcLeftShift,
+                KeyCode.VcRightShift,
+            };
 
         public HooksManager()
         {
             _hook.KeyPressed += OnKeyPressed;
+            _hook.KeyReleased += OnKeyReleased;
             _hook.MouseClicked += OnMouseClicked;
             _hook.RunAsync();
         }
 
-        public void RegisterKey(KeyCode key, EventHandler pressed)
+        public void RegisterCombo(KeyCombo combo, EventHandler pressed)
         {
-            if (_keyPressedEvents.ContainsKey(key))
-            {
-                throw new InvalidOperationException("Key already registered");
-            }
-            _keyPressedEvents.Add(key, pressed);
+            if (_comboEvents.ContainsKey(combo))
+                throw new InvalidOperationException("Key combo already registered");
+            _comboEvents.Add(combo, pressed);
         }
 
-        public void UnregisterKey(KeyCode key)
+        public void UnregisterCombo(KeyCombo combo)
         {
-            if (_keyPressedEvents.ContainsKey(key))
-            {
-                _keyPressedEvents.Remove(key);
-            }
+            if (_comboEvents.ContainsKey(combo))
+                _comboEvents.Remove(combo);
             else
-            {
-                throw new InvalidOperationException("Key not registered");
-            }
+                throw new InvalidOperationException("Key combo not registered");
         }
 
         public void OnKeyPressed(object? sender, KeyboardHookEventArgs args)
         {
-            if (_keyPressedEvents.ContainsKey(args.RawEvent.Keyboard.KeyCode))
+            var keyCode = args.RawEvent.Keyboard.KeyCode;
+            _pressedKeys.Add(keyCode);
+
+            // If the key is not a modifier one, this is probably the end of a combo
+            if (!ModifierKeyCodes.Contains(keyCode))
             {
-                _keyPressedEvents[args.RawEvent.Keyboard.KeyCode]?.Invoke(sender, args);
+                var combo = BuildCombo(keyCode);
+                if (_comboEvents.TryGetValue(combo, out var handler))
+                    handler?.Invoke(sender, args);
             }
+        }
+
+        public void OnKeyReleased(object? sender, KeyboardHookEventArgs args)
+        {
+            _pressedKeys.Remove(args.RawEvent.Keyboard.KeyCode);
         }
 
         public void OnMouseClicked(object? sender, MouseHookEventArgs args)
         {
             if (_mouseClickedEvents.ContainsKey(args.RawEvent.Mouse.Button))
-            {
                 _mouseClickedEvents[args.RawEvent.Mouse.Button]?.ForEach(e => e.Invoke(sender, args));
-            }
         }
 
-        public Task<KeyCode> ListenNextKey()
+        public Task<KeyCombo> ListenNextCombo()
         {
-            var tcs = new TaskCompletionSource<KeyCode>();
-            EventHandler<KeyboardHookEventArgs> handler = null;
+            var tcs = new TaskCompletionSource<KeyCombo>();
+            EventHandler<KeyboardHookEventArgs> handler = null!;
             handler = (sender, e) =>
             {
-                tcs.SetResult(e.RawEvent.Keyboard.KeyCode);
+                var keyCode = e.RawEvent.Keyboard.KeyCode;
+                if (ModifierKeyCodes.Contains(keyCode))
+                    return; // wait for the non-modifier key
+
+                tcs.SetResult(BuildCombo(keyCode));
                 _hook.KeyPressed -= handler;
             };
             _hook.KeyPressed += handler;
@@ -80,35 +97,37 @@ namespace Jido.Utils
         public void RegisterMouseClick(MouseButton button, EventHandler clicked)
         {
             if (!_mouseClickedEvents.ContainsKey(button))
-            {
                 _mouseClickedEvents.Add(button, new List<EventHandler>());
-            }
             _mouseClickedEvents[button].Add(clicked);
         }
 
         public void UnRegisterMouseClick(MouseButton button, EventHandler clicked)
         {
             if (_mouseClickedEvents.ContainsKey(button))
-            {
                 _mouseClickedEvents[button].Remove(clicked);
-            }
             else
-            {
                 throw new InvalidOperationException("Button not registered");
-            }
         }
+
+        private KeyCombo BuildCombo(KeyCode key) =>
+            new(
+                key,
+                ctrl: _pressedKeys.Contains(KeyCode.VcLeftControl) || _pressedKeys.Contains(KeyCode.VcRightControl),
+                alt: _pressedKeys.Contains(KeyCode.VcLeftAlt) || _pressedKeys.Contains(KeyCode.VcRightAlt),
+                shift: _pressedKeys.Contains(KeyCode.VcLeftShift) || _pressedKeys.Contains(KeyCode.VcRightShift)
+            );
     }
 
     public interface IHooksManager : IDisposable
     {
-        void RegisterKey(KeyCode key, EventHandler pressed);
+        void RegisterCombo(KeyCombo combo, EventHandler pressed);
 
-        void UnregisterKey(KeyCode key);
+        void UnregisterCombo(KeyCombo combo);
 
         void RegisterMouseClick(MouseButton button, EventHandler clicked);
 
         void UnRegisterMouseClick(MouseButton button, EventHandler clicked);
 
-        Task<KeyCode> ListenNextKey();
+        Task<KeyCombo> ListenNextCombo();
     }
 }

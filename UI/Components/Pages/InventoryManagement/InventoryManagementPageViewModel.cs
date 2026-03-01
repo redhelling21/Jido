@@ -4,7 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Jido.Config;
 using Jido.Services;
-using SharpHook.Data;
+using Jido.Utils;
 
 namespace Jido.UI.Components.Pages.InventoryManagement
 {
@@ -18,7 +18,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
         private string _inventoryConfigButtonText = "Configure";
 
         [ObservableProperty]
-        private KeyCode _emptyInventoryKey;
+        private KeyCombo _emptyInventoryKey;
 
         public InventoryManagementPageViewModel()
         { }
