@@ -162,7 +162,7 @@ public class AutopressConfig
 
 public class FillInventoryConfig
 {
-    public KeyCombo ToggleKey { get; set; } = new(KeyCode.VcF2);
+    public KeyCombo ToggleKey { get; set; } = new(KeyCode.VcF2, ctrl: true);
     public int[] LineColor { get; set; } = [231, 180, 119]; // RGB
     public int ColorTolerance { get; set; } = 3;
 
@@ -176,7 +176,7 @@ public class FillInventoryConfig
 
 public class BulkUseItemConfig
 {
-    public KeyCombo ToggleKey { get; set; } = new(SharpHook.Data.KeyCode.VcF6);
+    public KeyCombo ToggleKey { get; set; } = new(KeyCode.VcF2, ctrl: true, shift: true);
     public int ClickDelayMs { get; set; } = 120;
 }
 
@@ -189,6 +189,6 @@ public class InventoryManagementConfig
     public int InventoryHeight { get; set; } = 250;
     public int[] InventoryPosition { get; set; } = { 1000, 1000 };
     public bool[][] InventorySlots { get; set; } = new bool[GridWidth][];
-    public KeyCombo EmptyInventoryKey { get; set; } = new(SharpHook.Data.KeyCode.VcF4);
+    public KeyCombo EmptyInventoryKey { get; set; } = new(KeyCode.VcF2);
     public int ClickDelayMs { get; set; } = 80;
 }

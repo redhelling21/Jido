@@ -117,7 +117,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
         }
 
         [RelayCommand]
-        private void SaveConfig()
+        private void SaveAll()
         {
             var config = new InventoryManagementConfig
             {
@@ -130,6 +130,8 @@ namespace Jido.UI.Components.Pages.InventoryManagement
             };
             _inventoryService.UpdateConfig(config);
             _inventoryService.CaptureAndSaveEmptyReference();
+            _fillService.UpdateConfig(FillClickDelayMs);
+            _bulkService.UpdateConfig(BulkClickDelayMs);
         }
 
         [RelayCommand(CanExecute = nameof(CanChangeEmptyKey))]
@@ -158,12 +160,6 @@ namespace Jido.UI.Components.Pages.InventoryManagement
 
         private bool CanChangeFillKey() => !_isFillListening;
 
-        [RelayCommand]
-        private void SaveFillConfig()
-        {
-            _fillService.UpdateConfig(FillClickDelayMs);
-        }
-
         [RelayCommand(CanExecute = nameof(CanChangeBulkKey))]
         private async Task ChangeBulkKey()
         {
@@ -176,12 +172,6 @@ namespace Jido.UI.Components.Pages.InventoryManagement
         }
 
         private bool CanChangeBulkKey() => !_isBulkListening;
-
-        [RelayCommand]
-        private void SaveBulkConfig()
-        {
-            _bulkService.UpdateConfig(BulkClickDelayMs);
-        }
 
         private async Task<KeyCombo> ListenForKey(
             IToggleableService service,
