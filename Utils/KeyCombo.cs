@@ -105,7 +105,7 @@ public class KeyComboJsonConverter : JsonConverter<KeyCombo>
     {
         if (reader.TokenType == JsonTokenType.String)
             return KeyCombo.Parse(reader.GetString() ?? string.Empty);
-
+        var tt = reader.GetInt32();
         throw new JsonException($"Unexpected token {reader.TokenType} for KeyCombo.");
     }
 

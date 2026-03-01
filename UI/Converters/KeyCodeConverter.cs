@@ -31,8 +31,20 @@ namespace Jido.UI.Converters
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is string input)
+            {
+                if (targetType == typeof(KeyCode))
+                {
+                    var trimmed = input.Trim();
+                    if (Enum.TryParse<KeyCode>(trimmed, ignoreCase: true, out var direct))
+                        return direct;
+                    var candidate = "Vc" + char.ToUpper(trimmed[0]) + trimmed[1..];
+                    if (Enum.TryParse<KeyCode>(candidate, ignoreCase: true, out var prefixed))
+                        return prefixed;
+                    return KeyCode.VcUndefined;
+                }
                 return KeyCombo.Parse(input);
-            return new KeyCombo(KeyCode.VcUndefined);
+            }
+            return targetType == typeof(KeyCode) ? KeyCode.VcUndefined : new KeyCombo(KeyCode.VcUndefined);
         }
     }
 }
