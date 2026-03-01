@@ -32,35 +32,73 @@
         </Style>
     </UserControl.Styles>
     <common:PageWithHeader Title="Inventory Management" Subtitle="Multiple tools designed to ease inventory management">
-        <Grid ColumnDefinitions="*, 1, *">
-            <!--  LEFT COLUMN  -->
-            <StackPanel Grid.Column="0" HorizontalAlignment="Left">
-                <!--  EMPTY INV  -->
-                <TextBlock Margin="0,10,0,5" FontSize="16" FontWeight="Bold" Text="Empty inventory" />
-                <Grid ColumnDefinitions="Auto, 5, *" RowDefinitions="Auto, 5, Auto">
-                    <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
-                               VerticalAlignment="Center" Text="Key" />
-                    <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
-                             Text="{Binding EmptyInventoryKey, Converter={StaticResource KeyCodeConverter}}" />
-                    <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
-                               VerticalAlignment="Center" Text="Layout" />
-                    <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Command="{Binding ConfigureInventoryLayoutCommand}" Content="{Binding InventoryConfigButtonText}"></Button>
-                </Grid>
-                <Button Command="{Binding SaveConfigCommand}" Margin="0, 10, 0, 0">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />
-                            <TextBlock Text="Save all" />
-                        </StackPanel>
-                    </Button.Content>
-                </Button>
+        <StackPanel>
+            <!--  STATUS  -->
+            <StackPanel Margin="0,0,0,10" Orientation="Horizontal">
+                <TextBlock VerticalAlignment="Center" Text="Status: " />
+                <TextBlock VerticalAlignment="Center" Text="{Binding InventoryStatus}" />
             </StackPanel>
-            <Border Grid.Column="1" Width="1" Margin="20,0,20,10"
-                    Background="{DynamicResource Highlight100}" />
-            <!--  RIGHT COLUMN  -->
-            <Grid Grid.Column="2" ColumnDefinitions="*" RowDefinitions="Auto, *, 5, Auto, 5">
-                <TextBlock Grid.Row="0" FontSize="16" FontWeight="Bold" Text="Right column" />
+
+            <Grid ColumnDefinitions="*, 1, *">
+                <!--  LEFT COLUMN  -->
+                <StackPanel Grid.Column="0" HorizontalAlignment="Left">
+                    <!--  EMPTY INV  -->
+                    <TextBlock Margin="0,10,0,5" FontSize="16" FontWeight="Bold" Text="Empty inventory" />
+                    <Grid ColumnDefinitions="Auto, 5, *" RowDefinitions="Auto, 5, Auto">
+                        <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" Text="Key" />
+                        <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
+                                 Text="{Binding EmptyInventoryKey, Converter={StaticResource KeyCodeConverter}}" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" Text="Layout" />
+                        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Command="{Binding ConfigureInventoryLayoutCommand}" Content="{Binding InventoryConfigButtonText}"></Button>
+                    </Grid>
+                    <Button Command="{Binding SaveConfigCommand}" Margin="0, 10, 0, 0">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />
+                                <TextBlock Text="Save all" />
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
+                <Border Grid.Column="1" Width="1" Margin="20,0,20,10"
+                        Background="{DynamicResource Highlight100}" />
+                <!--  RIGHT COLUMN  -->
+                <StackPanel Grid.Column="2" HorizontalAlignment="Left">
+                    <!--  FILL INV  -->
+                    <TextBlock Margin="0,10,0,5" FontSize="16" FontWeight="Bold" Text="Fill inventory" />
+                    <Grid ColumnDefinitions="Auto, 5, *" RowDefinitions="Auto, 5, Auto, 5, Auto">
+                        <!--  Row 0: Toggle key  -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" Text="Toggle key" />
+                        <Grid Grid.Row="0" Grid.Column="2" ColumnDefinitions="*, 5, Auto">
+                            <TextBox Grid.Column="0" VerticalAlignment="Center" IsEnabled="False"
+                                     Text="{Binding FillInventoryKey, Converter={StaticResource KeyCodeConverter}}" />
+                            <Button Grid.Column="2" VerticalAlignment="Center"
+                                    Command="{Binding ChangeFillKeyCommand}"
+                                    Content="{Binding FillChangeKeyButtonText}" />
+                        </Grid>
+
+                        <!--  Row 2: Click delay  -->
+                        <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" Text="Click delay" />
+                        <Grid Grid.Row="2" Grid.Column="2" ColumnDefinitions="*, 5, Auto">
+                            <TextBox Grid.Column="0" VerticalAlignment="Center" Text="{Binding FillClickDelayMs}" />
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="ms" />
+                        </Grid>
+
+                        <!--  Row 4: Save  -->
+                        <Button Grid.Row="4" Grid.Column="2" HorizontalAlignment="Right"
+                                Command="{Binding SaveFillConfigCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />
+                                <TextBlock Text="Save" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </StackPanel>
             </Grid>
-        </Grid>
+        </StackPanel>
     </common:PageWithHeader>
 </UserControl>

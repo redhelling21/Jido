@@ -45,6 +45,8 @@ namespace Jido
             logger.LogInformation("AutopressService initialized");
             services.GetRequiredService<IInventoryManagementService>();
             logger.LogInformation("InventoryManagementService initialized");
+            services.GetRequiredService<IFillInventoryService>();
+            logger.LogInformation("FillInventoryService initialized");
             logger.LogInformation("All services ready");
 
             var router = services.GetRequiredService<Router<ViewModelBase>>();
@@ -82,6 +84,7 @@ namespace Jido
             services.AddSingleton<IAutolootService, AutolootService>();
             services.AddSingleton<IAutopressService, AutopressService>();
             services.AddSingleton<IInventoryManagementService, InventoryManagementService>();
+            services.AddSingleton<IFillInventoryService, FillInventoryService>();
 
             // Component ViewModels
             services.AddSingleton<MainWindowViewModel>();
