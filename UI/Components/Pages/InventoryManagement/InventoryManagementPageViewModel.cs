@@ -21,19 +21,18 @@ namespace Jido.UI.Components.Pages.InventoryManagement
         private KeyCode _emptyInventoryKey;
 
         public InventoryManagementPageViewModel()
-        {
-        }
+        { }
 
-        public InventoryManagementPageViewModel(IInventoryManagementService autopressService, IMapper mapper)
+        public InventoryManagementPageViewModel(IInventoryManagementService inventoryService, IMapper mapper)
         {
-            _inventoryService = autopressService;
+            _inventoryService = inventoryService;
             _emptyInventoryKey = _inventoryService.Config.EmptyInventoryKey;
             _inventoryOverlayData = new InventoryOverlayData
             {
                 InventoryHeight = _inventoryService.Config.InventoryHeight,
                 InventoryWidth = _inventoryService.Config.InventoryWidth,
                 InventorySlots = _inventoryService.Config.InventorySlots,
-                InventoryPosition = _inventoryService.Config.InventoryPosition
+                InventoryPosition = _inventoryService.Config.InventoryPosition,
             };
         }
 
@@ -45,28 +44,45 @@ namespace Jido.UI.Components.Pages.InventoryManagement
             if (_inventoryOverlay == null)
             {
                 _inventoryOverlay = new InventoryOverlay(_inventoryOverlayData);
+                _inventoryOverlay.Closing += OnOverlayClosing;
+                _inventoryOverlay.Closed += OnOverlayClosed;
                 _inventoryOverlay.Show();
                 InventoryConfigButtonText = "Save";
             }
             else
             {
-                _inventoryOverlayData = _inventoryOverlay.GetInventoryConfig();
+                // Closing triggers OnOverlayClosing which reads back the data
                 _inventoryOverlay.Close();
-                _inventoryOverlay = null;
-                InventoryConfigButtonText = "Configure";
             }
+        }
+
+        private void OnOverlayClosing(object? sender, WindowClosingEventArgs e)
+        {
+            // Get the updated config
+            if (_inventoryOverlay != null)
+                _inventoryOverlayData = _inventoryOverlay.GetInventoryConfig();
+        }
+
+        private void OnOverlayClosed(object? sender, System.EventArgs e)
+        {
+            _inventoryOverlay = null;
+            InventoryConfigButtonText = "Configure";
         }
 
         [RelayCommand]
         private void SaveConfig()
         {
-            var config = new InventoryManagementConfig();
-            config.EmptyInventoryKey = _emptyInventoryKey;
-            config.InventoryHeight = _inventoryOverlayData.InventoryHeight;
-            config.InventoryWidth = _inventoryOverlayData.InventoryWidth;
-            config.InventorySlots = _inventoryOverlayData.InventorySlots;
-            config.InventoryPosition = _inventoryOverlayData.InventoryPosition;
+            var config = new InventoryManagementConfig
+            {
+                EmptyInventoryKey = EmptyInventoryKey,
+                InventoryHeight = _inventoryOverlayData.InventoryHeight,
+                InventoryWidth = _inventoryOverlayData.InventoryWidth,
+                InventorySlots = _inventoryOverlayData.InventorySlots,
+                InventoryPosition = _inventoryOverlayData.InventoryPosition,
+            };
             _inventoryService.UpdateConfig(config);
+            // Screenshot the current (hopefully empty) inventory for comparison when running the routine
+            _inventoryService.CaptureAndSaveEmptyReference();
         }
 
         #endregion commands

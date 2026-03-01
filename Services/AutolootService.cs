@@ -265,6 +265,7 @@ namespace Jido.Services
                                 await SimulationUtils.MouseMoveAndClickAsync(
                                     (short)clickX,
                                     (short)clickY,
+                                    left: true,
                                     moveDurationMs: 50,
                                     cancellationToken
                                 );
