@@ -96,7 +96,9 @@ namespace Jido.Services
                 cfg.InventoryHeight
             );
 
-            using var raw = ScreenUtils.CaptureScreen(region);
+            // No `using` — EnsureBgr either returns raw unchanged (3-ch) or disposes it and
+            // returns a new Mat. Either way bgr is stored long-term in _emptyReference.
+            var raw = ScreenUtils.CaptureScreen(region);
 
             // Normalise to 3-channel BGR to match what Cv2.ImRead returns loading the file afterwards
             var bgr = OpenCVUtils.EnsureBgr(raw);
@@ -302,7 +304,7 @@ namespace Jido.Services
                             );
 
                             clicked[col, row] = true;
-                            await Task.Delay(80, cancellationToken);
+                            await Task.Delay(cfg.ClickDelayMs, cancellationToken);
                         }
                     }
                 }

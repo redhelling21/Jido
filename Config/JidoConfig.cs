@@ -170,7 +170,7 @@ public class FillInventoryConfig
 
     public int LineThicknessPx { get; set; } = 1; // thickness of the corner lines
     public float MatchThreshold { get; set; } = 0.7f; // minimum matching score
-    public int ClickDelayMs { get; set; } = 120;
+    public int ClickDelayMs { get; set; } = 80;
 }
 
 public class InventoryManagementConfig
@@ -183,4 +183,5 @@ public class InventoryManagementConfig
     public int[] InventoryPosition { get; set; } = { 1000, 1000 };
     public bool[][] InventorySlots { get; set; } = new bool[GridWidth][];
     public KeyCombo EmptyInventoryKey { get; set; } = new(SharpHook.Data.KeyCode.VcF4);
+    public int ClickDelayMs { get; set; } = 80;
 }

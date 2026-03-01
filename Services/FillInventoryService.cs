@@ -151,14 +151,16 @@ namespace Jido.Services
                 // Read only the left-half of the screen, where the stash is
                 var region = new Rectangle(0, 0, _config.Screen.Width / 2, _config.Screen.Height);
 
-                while (true)
+                const int MaxPasses = 20;
+                int pass = 0;
+                while (pass++ < MaxPasses)
                 {
                     token.ThrowIfCancellationRequested();
 
                     using var mat = OpenCVUtils.EnsureBgr(ScreenUtils.CaptureScreen(region));
                     // Detect the corners in the image
                     var targets = FindCorners(mat, cfg);
-                    _logger.LogDebug("FillInventory: {Count} corner(s) detected", targets.Count);
+                    _logger.LogDebug("FillInventory: {Count} corner(s) detected (pass {Pass})", targets.Count, pass);
 
                     if (targets.Count == 0)
                         break;

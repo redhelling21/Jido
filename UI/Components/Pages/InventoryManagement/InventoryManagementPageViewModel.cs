@@ -23,10 +23,15 @@ namespace Jido.UI.Components.Pages.InventoryManagement
         private KeyCombo _emptyInventoryKey;
 
         [ObservableProperty]
-        private ServiceStatus _inventoryStatus;
+        private int _inventoryClickDelayMs;
 
         [ObservableProperty]
         private KeyCombo _fillInventoryKey;
+
+        [ObservableProperty]
+        private string _emptyChangeKeyButtonText = "Change";
+
+        private bool _isEmptyListening;
 
         [ObservableProperty]
         private string _fillChangeKeyButtonText = "Change";
@@ -44,6 +49,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
             _inventoryService = inventoryService;
             _fillService = fillService;
             _emptyInventoryKey = _inventoryService.Config.EmptyInventoryKey;
+            _inventoryClickDelayMs = _inventoryService.Config.ClickDelayMs;
             _inventoryOverlayData = new InventoryOverlayData
             {
                 InventoryHeight = _inventoryService.Config.InventoryHeight,
@@ -54,13 +60,6 @@ namespace Jido.UI.Components.Pages.InventoryManagement
 
             _fillInventoryKey = _fillService.Config.ToggleKey;
             _fillClickDelayMs = _fillService.Config.ClickDelayMs;
-
-            _inventoryStatus = ServiceStatus.STOPPED;
-
-            _inventoryService.StatusChanged += (_, s) =>
-                InventoryStatus = s != ServiceStatus.STOPPED ? s : _fillService.Status;
-            _fillService.StatusChanged += (_, s) =>
-                InventoryStatus = s != ServiceStatus.STOPPED ? s : _inventoryService.Status;
         }
 
         #region commands
@@ -101,6 +100,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
             var config = new InventoryManagementConfig
             {
                 EmptyInventoryKey = EmptyInventoryKey,
+                ClickDelayMs = InventoryClickDelayMs,
                 InventoryHeight = _inventoryOverlayData.InventoryHeight,
                 InventoryWidth = _inventoryOverlayData.InventoryWidth,
                 InventorySlots = _inventoryOverlayData.InventorySlots,
@@ -109,6 +109,20 @@ namespace Jido.UI.Components.Pages.InventoryManagement
             _inventoryService.UpdateConfig(config);
             _inventoryService.CaptureAndSaveEmptyReference();
         }
+
+        [RelayCommand(CanExecute = nameof(CanChangeEmptyKey))]
+        private async Task ChangeEmptyKey()
+        {
+            _isEmptyListening = true;
+            ChangeEmptyKeyCommand.NotifyCanExecuteChanged();
+            EmptyChangeKeyButtonText = "Listening...";
+            EmptyInventoryKey = await _inventoryService.ChangeToggleKey();
+            EmptyChangeKeyButtonText = "Change";
+            _isEmptyListening = false;
+            ChangeEmptyKeyCommand.NotifyCanExecuteChanged();
+        }
+
+        private bool CanChangeEmptyKey() => !_isEmptyListening;
 
         [RelayCommand(CanExecute = nameof(CanChangeFillKey))]
         private async Task ChangeFillKey()

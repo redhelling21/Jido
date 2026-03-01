@@ -33,25 +33,30 @@
     </UserControl.Styles>
     <common:PageWithHeader Title="Inventory Management" Subtitle="Multiple tools designed to ease inventory management">
         <StackPanel>
-            <!--  STATUS  -->
-            <StackPanel Margin="0,0,0,10" Orientation="Horizontal">
-                <TextBlock VerticalAlignment="Center" Text="Status: " />
-                <TextBlock VerticalAlignment="Center" Text="{Binding InventoryStatus}" />
-            </StackPanel>
-
             <Grid ColumnDefinitions="*, 1, *">
                 <!--  LEFT COLUMN  -->
                 <StackPanel Grid.Column="0" HorizontalAlignment="Left">
                     <!--  EMPTY INV  -->
                     <TextBlock Margin="0,10,0,5" FontSize="16" FontWeight="Bold" Text="Empty inventory" />
-                    <Grid ColumnDefinitions="Auto, 5, *" RowDefinitions="Auto, 5, Auto">
+                    <Grid ColumnDefinitions="Auto, 5, *" RowDefinitions="Auto, 5, Auto, 5, Auto">
                         <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                                    VerticalAlignment="Center" Text="Key" />
-                        <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
-                                 Text="{Binding EmptyInventoryKey, Converter={StaticResource KeyCodeConverter}}" />
+                        <Grid Grid.Row="0" Grid.Column="2" ColumnDefinitions="*, 5, Auto">
+                            <TextBox Grid.Column="0" VerticalAlignment="Center" IsEnabled="False"
+                                     Text="{Binding EmptyInventoryKey, Converter={StaticResource KeyCodeConverter}}" />
+                            <Button Grid.Column="2" VerticalAlignment="Center"
+                                    Command="{Binding ChangeEmptyKeyCommand}"
+                                    Content="{Binding EmptyChangeKeyButtonText}" />
+                        </Grid>
                         <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
                                    VerticalAlignment="Center" Text="Layout" />
                         <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Command="{Binding ConfigureInventoryLayoutCommand}" Content="{Binding InventoryConfigButtonText}"></Button>
+                        <TextBlock Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" Text="Click delay" />
+                        <Grid Grid.Row="4" Grid.Column="2" ColumnDefinitions="*, 5, Auto">
+                            <TextBox Grid.Column="0" VerticalAlignment="Center" Text="{Binding InventoryClickDelayMs}" />
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="ms" />
+                        </Grid>
                     </Grid>
                     <Button Command="{Binding SaveConfigCommand}" Margin="0, 10, 0, 0">
                         <Button.Content>
