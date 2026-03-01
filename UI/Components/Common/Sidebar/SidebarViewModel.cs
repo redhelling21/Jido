@@ -48,6 +48,7 @@ namespace Jido.UI.Components.Common.Sidebar
                 case ServiceNames.Autopress: AutopressStatus = e.Status; break;
                 case ServiceNames.InventoryManagement:
                 case ServiceNames.FillInventory:
+                case ServiceNames.BulkUseItem:
                     InventoryManagementStatus = e.Status;
                     break;
             }
