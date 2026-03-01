@@ -22,5 +22,6 @@ namespace Jido.Services
         public const string Autoloot = "Autoloot";
         public const string Autopress = "Autopress";
         public const string InventoryManagement = "InventoryManagement";
+        public const string FillInventory = "FillInventory";
     }
 }

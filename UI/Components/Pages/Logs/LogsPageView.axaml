@@ -39,11 +39,11 @@
                     <ItemsControl ItemsSource="{Binding DisplayedEntries}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:LogEntryViewModel">
-                                <TextBlock Text="{Binding Text}"
-                                           Foreground="{Binding Foreground}"
-                                           FontFamily="Consolas,Courier New,monospace"
-                                           FontSize="12"
-                                           TextWrapping="NoWrap" />
+                                <SelectableTextBlock Text="{Binding Text}"
+                                                    Foreground="{Binding Foreground}"
+                                                    FontFamily="Consolas,Courier New,monospace"
+                                                    FontSize="12"
+                                                    TextWrapping="NoWrap" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

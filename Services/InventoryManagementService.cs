@@ -26,8 +26,6 @@ namespace Jido.Services
 
         private readonly ILogger<InventoryManagementService> _logger;
 
-        private CancellationTokenSource? _cts;
-
         // Empty-inventory reference image (always 3-channel BGR), guarded by _referenceLock.
         private readonly object _referenceLock = new();
 
@@ -96,10 +94,12 @@ namespace Jido.Services
                 cfg.InventoryHeight
             );
 
-            using var raw = ScreenUtils.CaptureScreen(region);
+            // No `using` — EnsureBgr either returns raw unchanged (3-ch) or disposes it and
+            // returns a new Mat. Either way bgr is stored long-term in _emptyReference.
+            var raw = ScreenUtils.CaptureScreen(region);
 
             // Normalise to 3-channel BGR to match what Cv2.ImRead returns loading the file afterwards
-            var bgr = EnsureBgr(raw);
+            var bgr = OpenCVUtils.EnsureBgr(raw);
 
             Cv2.ImWrite(EmptyReferencePath, bgr);
             _logger.LogDebug(
@@ -129,8 +129,10 @@ namespace Jido.Services
             if (_macroService.Status == ServiceStatus.STOPPED)
                 return;
 
-            _cts = new CancellationTokenSource();
-            _ = Task.Run(() => EmptyInventoryRoutine(_cts.Token));
+            if (_serviceHub.IsActive(ServiceNames.FillInventory))
+                return;
+
+            _ = Task.Run(() => EmptyInventoryRoutine(ResetCts().Token));
         }
 
         protected override void StopRoutine()
@@ -144,26 +146,12 @@ namespace Jido.Services
 
         public override void Dispose()
         {
-            _cts?.Dispose();
             lock (_referenceLock)
             {
                 _emptyReference?.Dispose();
                 _emptyReference = null;
             }
             base.Dispose();
-        }
-
-        // Helpers
-
-        private static Mat EnsureBgr(Mat src)
-        {
-            if (src.Channels() == 3)
-                return src;
-
-            var dst = new Mat();
-            Cv2.CvtColor(src, dst, ColorConversionCodes.BGRA2BGR);
-            src.Dispose();
-            return dst;
         }
 
         // Difference between two mats (to check if they are similar enough)
@@ -218,7 +206,7 @@ namespace Jido.Services
 
                 // Get an initial screenshot to see when inv. slots content changes (generally after
                 // it was clicked)
-                using Mat initialMat = EnsureBgr(ScreenUtils.CaptureScreen(inventoryRegion, captureBitmap));
+                using Mat initialMat = OpenCVUtils.EnsureBgr(ScreenUtils.CaptureScreen(inventoryRegion, captureBitmap));
                 // Remember which slot we already clicked
                 var clicked = new bool[InventoryManagementConfig.GridWidth, InventoryManagementConfig.GridHeight];
 
@@ -275,7 +263,7 @@ namespace Jido.Services
 
                             // Actualize the content of the slot
                             using Mat currentRaw = ScreenUtils.CaptureScreen(inventoryRegion, captureBitmap);
-                            using Mat currentMat = EnsureBgr(currentRaw);
+                            using Mat currentMat = OpenCVUtils.EnsureBgr(currentRaw);
                             using var currentCell = new Mat(currentMat, cellRect);
                             double changeRms = CellRms(currentCell, initialCell);
                             if (changeRms > ChangeCheckRmsThreshold)
@@ -312,7 +300,7 @@ namespace Jido.Services
                             );
 
                             clicked[col, row] = true;
-                            await Task.Delay(80, cancellationToken);
+                            await Task.Delay(cfg.ClickDelayMs, cancellationToken);
                         }
                     }
                 }

@@ -17,7 +17,6 @@ namespace Jido.Services
     {
         private readonly ILogger<AutopressService> _logger;
         private EventSimulator _eventSimulator = new EventSimulator();
-        private CancellationTokenSource _cancellationTokenSource;
         private readonly System.Timers.Timer _suspendTimer = new() { AutoReset = false };
         private readonly ConcurrentQueue<LowLevelCommand> _queuedCommands = new();
         public List<HighLevelCommand> ScheduledCommands { get; private set; }
@@ -119,11 +118,11 @@ namespace Jido.Services
 
         private void StartRoutine()
         {
-            _cancellationTokenSource = new CancellationTokenSource();
+            var token = ResetCts().Token;
             foreach (var cmd in ConstantCommands)
                 _eventSimulator.SimulateKeyPress(cmd.KeyToPress);
 
-            _ = Task.Run(() => KeyPressRoutine(_cancellationTokenSource.Token));
+            _ = Task.Run(() => KeyPressRoutine(token));
 
             // Each command enqueues once immediately on Start(), then continues on its own timer.
             // KeyPressRoutine consumes the shared queue and handles the actual key simulation.
@@ -136,9 +135,9 @@ namespace Jido.Services
         {
             // Guard against double-stop: called from Toggle, SuspendAutoPress, UpdateConfig, and
             // the base class macro-stop handler — any of which may race with each other.
-            if (_cancellationTokenSource is null || _cancellationTokenSource.IsCancellationRequested)
+            if (_cts is null || _cts.IsCancellationRequested)
                 return;
-            _cancellationTokenSource.Cancel();
+            _cts.Cancel();
 
             _suspendTimer.Stop();
 
@@ -152,7 +151,6 @@ namespace Jido.Services
             while (_queuedCommands.TryDequeue(out _)) { }
 
             Status = ServiceStatus.STOPPED;
-            _cancellationTokenSource.Dispose();
         }
 
         private async Task KeyPressRoutine(CancellationToken cancellationToken)
@@ -198,7 +196,6 @@ namespace Jido.Services
         public override void Dispose()
         {
             _keyHooksManager.UnRegisterMouseClick(MouseButton.Button1, SuspendAutoPress);
-            _cancellationTokenSource?.Dispose();
             _suspendTimer?.Dispose();
             base.Dispose();
         }

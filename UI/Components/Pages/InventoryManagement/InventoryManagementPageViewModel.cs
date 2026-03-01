@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using AutoMapper;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -11,6 +12,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
     public partial class InventoryManagementPageViewModel : ViewModelBase
     {
         private IInventoryManagementService _inventoryService;
+        private IFillInventoryService _fillService;
         private InventoryOverlay? _inventoryOverlay;
         private InventoryOverlayData _inventoryOverlayData;
 
@@ -20,13 +22,34 @@ namespace Jido.UI.Components.Pages.InventoryManagement
         [ObservableProperty]
         private KeyCombo _emptyInventoryKey;
 
+        [ObservableProperty]
+        private int _inventoryClickDelayMs;
+
+        [ObservableProperty]
+        private KeyCombo _fillInventoryKey;
+
+        [ObservableProperty]
+        private string _emptyChangeKeyButtonText = "Change";
+
+        private bool _isEmptyListening;
+
+        [ObservableProperty]
+        private string _fillChangeKeyButtonText = "Change";
+
+        private bool _isFillListening;
+
+        [ObservableProperty]
+        private int _fillClickDelayMs;
+
         public InventoryManagementPageViewModel()
         { }
 
-        public InventoryManagementPageViewModel(IInventoryManagementService inventoryService, IMapper mapper)
+        public InventoryManagementPageViewModel(IInventoryManagementService inventoryService, IFillInventoryService fillService, IMapper mapper)
         {
             _inventoryService = inventoryService;
+            _fillService = fillService;
             _emptyInventoryKey = _inventoryService.Config.EmptyInventoryKey;
+            _inventoryClickDelayMs = _inventoryService.Config.ClickDelayMs;
             _inventoryOverlayData = new InventoryOverlayData
             {
                 InventoryHeight = _inventoryService.Config.InventoryHeight,
@@ -34,6 +57,9 @@ namespace Jido.UI.Components.Pages.InventoryManagement
                 InventorySlots = _inventoryService.Config.InventorySlots,
                 InventoryPosition = _inventoryService.Config.InventoryPosition,
             };
+
+            _fillInventoryKey = _fillService.Config.ToggleKey;
+            _fillClickDelayMs = _fillService.Config.ClickDelayMs;
         }
 
         #region commands
@@ -58,7 +84,6 @@ namespace Jido.UI.Components.Pages.InventoryManagement
 
         private void OnOverlayClosing(object? sender, WindowClosingEventArgs e)
         {
-            // Get the updated config
             if (_inventoryOverlay != null)
                 _inventoryOverlayData = _inventoryOverlay.GetInventoryConfig();
         }
@@ -75,14 +100,48 @@ namespace Jido.UI.Components.Pages.InventoryManagement
             var config = new InventoryManagementConfig
             {
                 EmptyInventoryKey = EmptyInventoryKey,
+                ClickDelayMs = InventoryClickDelayMs,
                 InventoryHeight = _inventoryOverlayData.InventoryHeight,
                 InventoryWidth = _inventoryOverlayData.InventoryWidth,
                 InventorySlots = _inventoryOverlayData.InventorySlots,
                 InventoryPosition = _inventoryOverlayData.InventoryPosition,
             };
             _inventoryService.UpdateConfig(config);
-            // Screenshot the current (hopefully empty) inventory for comparison when running the routine
             _inventoryService.CaptureAndSaveEmptyReference();
+        }
+
+        [RelayCommand(CanExecute = nameof(CanChangeEmptyKey))]
+        private async Task ChangeEmptyKey()
+        {
+            _isEmptyListening = true;
+            ChangeEmptyKeyCommand.NotifyCanExecuteChanged();
+            EmptyChangeKeyButtonText = "Listening...";
+            EmptyInventoryKey = await _inventoryService.ChangeToggleKey();
+            EmptyChangeKeyButtonText = "Change";
+            _isEmptyListening = false;
+            ChangeEmptyKeyCommand.NotifyCanExecuteChanged();
+        }
+
+        private bool CanChangeEmptyKey() => !_isEmptyListening;
+
+        [RelayCommand(CanExecute = nameof(CanChangeFillKey))]
+        private async Task ChangeFillKey()
+        {
+            _isFillListening = true;
+            ChangeFillKeyCommand.NotifyCanExecuteChanged();
+            FillChangeKeyButtonText = "Listening...";
+            FillInventoryKey = await _fillService.ChangeToggleKey();
+            FillChangeKeyButtonText = "Change";
+            _isFillListening = false;
+            ChangeFillKeyCommand.NotifyCanExecuteChanged();
+        }
+
+        private bool CanChangeFillKey() => !_isFillListening;
+
+        [RelayCommand]
+        private void SaveFillConfig()
+        {
+            _fillService.UpdateConfig(FillClickDelayMs);
         }
 
         #endregion commands

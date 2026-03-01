@@ -18,7 +18,6 @@ namespace Jido.Services
     public class AutolootService : BaseToggleableService, IAutolootService
     {
         private readonly ILogger<AutolootService> _logger;
-        private CancellationTokenSource _cancellationTokenSource;
 
         private double _averageCycleMs;
         public double AverageCycleMs => _averageCycleMs;
@@ -54,9 +53,8 @@ namespace Jido.Services
                 if (_macroService.Status == ServiceStatus.STOPPED)
                     return;
                 _logger.LogInformation("Autoloot started");
-                _cancellationTokenSource = new CancellationTokenSource();
                 Status = ServiceStatus.IDLE;
-                _ = Task.Run(() => AutolootRoutine(_cancellationTokenSource.Token));
+                _ = Task.Run(() => AutolootRoutine(ResetCts().Token));
             }
             else
             {
@@ -67,7 +65,7 @@ namespace Jido.Services
         protected override void StopRoutine()
         {
             _logger.LogInformation("Autoloot stopped");
-            _cancellationTokenSource?.Cancel();
+            _cts?.Cancel();
             Status = ServiceStatus.STOPPED;
         }
 
@@ -298,7 +296,6 @@ namespace Jido.Services
 
         public override void Dispose()
         {
-            _cancellationTokenSource?.Dispose();
             base.Dispose();
         }
     }

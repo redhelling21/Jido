@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Jido.Models;
 using Jido.Utils;
 using Microsoft.Extensions.Logging;
-using OpenCvSharp;
+using SharpHook.Data;
 using static Jido.Models.CompositeHighLevelCommand;
 
 namespace Jido.Config;
@@ -125,11 +125,12 @@ public class FeaturesConfig
     public AutolootConfig Autoloot { get; set; } = new();
     public AutopressConfig Autopress { get; set; } = new();
     public InventoryManagementConfig InventoryManagement { get; set; } = new();
+    public FillInventoryConfig FillInventory { get; set; } = new();
 }
 
 public class AutolootConfig
 {
-    public KeyCombo ToggleKey { get; set; } = new(SharpHook.Data.KeyCode.VcF3);
+    public KeyCombo ToggleKey { get; set; } = new(KeyCode.VcF3);
 
     public List<Color> Colors { get; set; } =
         new List<Color>()
@@ -151,11 +152,25 @@ public class AutolootConfig
 
 public class AutopressConfig
 {
-    public KeyCombo ToggleKey { get; set; } = new(SharpHook.Data.KeyCode.VcQ);
+    public KeyCombo ToggleKey { get; set; } = new(KeyCode.VcQ);
     public int ClickDelay { get; set; } = 1200;
     public double IntervalRandomizationRatio { get; set; } = 0.1;
     public List<HighLevelCommand> ScheduledCommands { get; set; } = new();
     public List<ConstantCommand> ConstantCommands { get; set; } = new();
+}
+
+public class FillInventoryConfig
+{
+    public KeyCombo ToggleKey { get; set; } = new(KeyCode.VcF2);
+    public int[] LineColor { get; set; } = [231, 180, 119]; // RGB
+    public int ColorTolerance { get; set; } = 3;
+
+    // Corner shape configuration
+    public int ArmLengthPx { get; set; } = 10; // length of each arm of the ⌟
+
+    public int LineThicknessPx { get; set; } = 1; // thickness of the corner lines
+    public float MatchThreshold { get; set; } = 0.7f; // minimum matching score
+    public int ClickDelayMs { get; set; } = 80;
 }
 
 public class InventoryManagementConfig
@@ -168,4 +183,5 @@ public class InventoryManagementConfig
     public int[] InventoryPosition { get; set; } = { 1000, 1000 };
     public bool[][] InventorySlots { get; set; } = new bool[GridWidth][];
     public KeyCombo EmptyInventoryKey { get; set; } = new(SharpHook.Data.KeyCode.VcF4);
+    public int ClickDelayMs { get; set; } = 80;
 }
