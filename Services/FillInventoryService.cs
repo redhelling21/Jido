@@ -16,7 +16,6 @@ namespace Jido.Services
     {
         private static readonly EventSimulator _simulator = new EventSimulator();
         private readonly ILogger<FillInventoryService> _logger;
-        private CancellationTokenSource? _cts;
 
         public FillInventoryConfig Config => _config.Features.FillInventory;
 
@@ -60,8 +59,7 @@ namespace Jido.Services
             if (_serviceHub.IsActive(ServiceNames.InventoryManagement))
                 return;
 
-            _cts = new CancellationTokenSource();
-            _ = Task.Run(() => FillRoutine(_cts.Token));
+            _ = Task.Run(() => FillRoutine(ResetCts().Token));
         }
 
         protected override void StopRoutine()
@@ -74,7 +72,6 @@ namespace Jido.Services
 
         public override void Dispose()
         {
-            _cts?.Dispose();
             base.Dispose();
         }
 

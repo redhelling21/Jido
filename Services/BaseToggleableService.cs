@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Jido.Config;
 using Jido.Utils;
@@ -12,6 +13,17 @@ namespace Jido.Services
         protected readonly IMacroService _macroService;
         protected readonly IServiceHub _serviceHub;
         private KeyCombo _toggleCombo;
+
+        protected CancellationTokenSource? _cts;
+
+        // Cancel and dispose the current CTS (if any) and creates a fresh one
+        protected CancellationTokenSource ResetCts()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+            return _cts;
+        }
 
         public KeyCombo ToggleKey => _toggleCombo;
 
@@ -80,6 +92,8 @@ namespace Jido.Services
             _macroService.StatusChanged -= OnMacroStatusChanged;
             _keyHooksManager.UnregisterCombo(_toggleCombo);
             _keyHooksManager.Dispose();
+            _cts?.Cancel();
+            _cts?.Dispose();
         }
     }
 }

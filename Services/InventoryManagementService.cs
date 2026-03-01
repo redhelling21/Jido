@@ -26,8 +26,6 @@ namespace Jido.Services
 
         private readonly ILogger<InventoryManagementService> _logger;
 
-        private CancellationTokenSource? _cts;
-
         // Empty-inventory reference image (always 3-channel BGR), guarded by _referenceLock.
         private readonly object _referenceLock = new();
 
@@ -134,8 +132,7 @@ namespace Jido.Services
             if (_serviceHub.IsActive(ServiceNames.FillInventory))
                 return;
 
-            _cts = new CancellationTokenSource();
-            _ = Task.Run(() => EmptyInventoryRoutine(_cts.Token));
+            _ = Task.Run(() => EmptyInventoryRoutine(ResetCts().Token));
         }
 
         protected override void StopRoutine()
@@ -149,7 +146,6 @@ namespace Jido.Services
 
         public override void Dispose()
         {
-            _cts?.Dispose();
             lock (_referenceLock)
             {
                 _emptyReference?.Dispose();
