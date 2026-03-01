@@ -9,6 +9,7 @@ namespace Jido.UI.Components
     public abstract partial class ToggleablePageViewModel : ViewModelBase
     {
         private readonly IToggleableService? _toggleableService;
+        private bool _isListening;
 
         [ObservableProperty]
         private string changeKeyButtonText = "Change";
@@ -24,14 +25,20 @@ namespace Jido.UI.Components
             ToggleKey = _toggleableService.ToggleKey;
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanChangeKey))]
         private async Task ChangeKey()
         {
-            if (_toggleableService is null)
-                return;
+            _isListening = true;
+            ChangeKeyCommand.NotifyCanExecuteChanged();
             ChangeKeyButtonText = "Listening...";
-            ToggleKey = await _toggleableService.ChangeToggleKey();
+
+            ToggleKey = await _toggleableService!.ChangeToggleKey();
+
             ChangeKeyButtonText = "Change";
+            _isListening = false;
+            ChangeKeyCommand.NotifyCanExecuteChanged();
         }
+
+        private bool CanChangeKey() => !_isListening && _toggleableService is not null;
     }
 }

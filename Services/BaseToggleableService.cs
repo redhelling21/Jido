@@ -64,6 +64,9 @@ namespace Jido.Services
         public async Task<KeyCombo> ChangeToggleKey()
         {
             var combo = await _keyHooksManager.ListenNextCombo();
+            if (combo == _toggleCombo)
+                return _toggleCombo;
+
             _keyHooksManager.UnregisterCombo(_toggleCombo);
             _toggleCombo = combo;
             PersistToggleCombo(combo);
