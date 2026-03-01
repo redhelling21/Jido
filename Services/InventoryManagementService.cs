@@ -129,7 +129,7 @@ namespace Jido.Services
             if (_macroService.Status == ServiceStatus.STOPPED)
                 return;
 
-            if (_serviceHub.IsActive(ServiceNames.FillInventory))
+            if (_serviceHub.IsActive(ServiceNames.FillInventory) || _serviceHub.IsActive(ServiceNames.BulkUseItem))
                 return;
 
             _ = Task.Run(() => EmptyInventoryRoutine(ResetCts().Token));

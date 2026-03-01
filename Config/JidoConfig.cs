@@ -126,6 +126,7 @@ public class FeaturesConfig
     public AutopressConfig Autopress { get; set; } = new();
     public InventoryManagementConfig InventoryManagement { get; set; } = new();
     public FillInventoryConfig FillInventory { get; set; } = new();
+    public BulkUseItemConfig BulkUseItem { get; set; } = new();
 }
 
 public class AutolootConfig
@@ -171,6 +172,12 @@ public class FillInventoryConfig
     public int LineThicknessPx { get; set; } = 1; // thickness of the corner lines
     public float MatchThreshold { get; set; } = 0.7f; // minimum matching score
     public int ClickDelayMs { get; set; } = 80;
+}
+
+public class BulkUseItemConfig
+{
+    public KeyCombo ToggleKey { get; set; } = new(SharpHook.Data.KeyCode.VcF6);
+    public int ClickDelayMs { get; set; } = 120;
 }
 
 public class InventoryManagementConfig
