@@ -71,7 +71,7 @@ namespace Jido.Services
             Status = ServiceStatus.STOPPED;
         }
 
-        protected override void PersistToggleKey(KeyCode key) => _config.Features.Autoloot.ToggleKey = key;
+        protected override void PersistToggleCombo(KeyCombo combo) => _config.Features.Autoloot.ToggleKey = combo;
 
         public void UpdateConfig(int cycleDelayMs, double captureRatio)
         {

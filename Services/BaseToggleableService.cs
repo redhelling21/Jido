@@ -1,11 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Jido.Config;
 using Jido.Utils;
-using SharpHook.Data;
 
 namespace Jido.Services
 {
@@ -15,9 +11,9 @@ namespace Jido.Services
         protected readonly JidoConfig _config;
         protected readonly IMacroService _macroService;
         protected readonly IServiceHub _serviceHub;
-        private KeyCode _toggleKey;
+        private KeyCombo _toggleCombo;
 
-        public KeyCode ToggleKey => _toggleKey;
+        public KeyCombo ToggleKey => _toggleCombo;
 
         // ensures cross-thread reads see the latest write
         private volatile int _statusValue = (int)ServiceStatus.STOPPED;
@@ -38,7 +34,7 @@ namespace Jido.Services
             IHooksManager keyHooksManager,
             JidoConfig config,
             IMacroService macroService,
-            KeyCode toggleKey,
+            KeyCombo toggleCombo,
             IServiceHub serviceHub,
             string serviceName
         )
@@ -47,8 +43,8 @@ namespace Jido.Services
             _config = config;
             _macroService = macroService;
             _serviceHub = serviceHub;
-            _toggleKey = toggleKey;
-            _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
+            _toggleCombo = toggleCombo;
+            _keyHooksManager.RegisterCombo(_toggleCombo, (_, _) => Toggle());
             _macroService.StatusChanged += OnMacroStatusChanged;
             serviceHub.Register(serviceName, this);
         }
@@ -57,7 +53,7 @@ namespace Jido.Services
 
         protected abstract void StopRoutine();
 
-        protected abstract void PersistToggleKey(KeyCode key);
+        protected abstract void PersistToggleCombo(KeyCombo combo);
 
         private void OnMacroStatusChanged(object? sender, ServiceStatus macroStatus)
         {
@@ -65,21 +61,24 @@ namespace Jido.Services
                 StopRoutine();
         }
 
-        public async Task<KeyCode> ChangeToggleKey()
+        public async Task<KeyCombo> ChangeToggleKey()
         {
-            var key = await _keyHooksManager.ListenNextKey();
-            _keyHooksManager.UnregisterKey(_toggleKey);
-            _toggleKey = key;
-            PersistToggleKey(key);
+            var combo = await _keyHooksManager.ListenNextCombo();
+            if (combo == _toggleCombo)
+                return _toggleCombo;
+
+            _keyHooksManager.UnregisterCombo(_toggleCombo);
+            _toggleCombo = combo;
+            PersistToggleCombo(combo);
             _config.Persist();
-            _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
-            return _toggleKey;
+            _keyHooksManager.RegisterCombo(_toggleCombo, (_, _) => Toggle());
+            return _toggleCombo;
         }
 
         public virtual void Dispose()
         {
             _macroService.StatusChanged -= OnMacroStatusChanged;
-            _keyHooksManager.UnregisterKey(_toggleKey);
+            _keyHooksManager.UnregisterCombo(_toggleCombo);
             _keyHooksManager.Dispose();
         }
     }

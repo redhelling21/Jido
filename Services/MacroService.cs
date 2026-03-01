@@ -1,12 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Jido.Config;
 using Jido.Utils;
 using Microsoft.Extensions.Logging;
-using SharpHook.Data;
 
 namespace Jido.Services
 {
@@ -15,9 +11,9 @@ namespace Jido.Services
         private readonly IHooksManager _keyHooksManager;
         private readonly JidoConfig _config;
         private readonly ILogger<MacroService> _logger;
-        private KeyCode _toggleKey;
+        private KeyCombo _toggleCombo;
 
-        public KeyCode ToggleKey => _toggleKey;
+        public KeyCombo ToggleKey => _toggleCombo;
 
         private ServiceStatus _status = ServiceStatus.STOPPED;
 
@@ -38,8 +34,8 @@ namespace Jido.Services
             _keyHooksManager = keyHooksManager;
             _config = config;
             _logger = logger;
-            _toggleKey = _config.ToggleKey;
-            _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
+            _toggleCombo = _config.ToggleKey;
+            _keyHooksManager.RegisterCombo(_toggleCombo, (_, _) => Toggle());
             serviceHub.Register(ServiceNames.Macro, this);
         }
 
@@ -57,20 +53,23 @@ namespace Jido.Services
             }
         }
 
-        public async Task<KeyCode> ChangeToggleKey()
+        public async Task<KeyCombo> ChangeToggleKey()
         {
-            var key = await _keyHooksManager.ListenNextKey();
-            _keyHooksManager.UnregisterKey(_toggleKey);
-            _toggleKey = key;
-            _config.ToggleKey = key;
+            var combo = await _keyHooksManager.ListenNextCombo();
+            if (combo == _toggleCombo)
+                return _toggleCombo;
+
+            _keyHooksManager.UnregisterCombo(_toggleCombo);
+            _toggleCombo = combo;
+            _config.ToggleKey = combo;
             _config.Persist();
-            _keyHooksManager.RegisterKey(_toggleKey, (_, _) => Toggle());
-            return _toggleKey;
+            _keyHooksManager.RegisterCombo(_toggleCombo, (_, _) => Toggle());
+            return _toggleCombo;
         }
 
         public void Dispose()
         {
-            _keyHooksManager.UnregisterKey(_toggleKey);
+            _keyHooksManager.UnregisterCombo(_toggleCombo);
             _keyHooksManager.Dispose();
         }
     }

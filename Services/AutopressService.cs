@@ -193,7 +193,7 @@ namespace Jido.Services
             }
         }
 
-        protected override void PersistToggleKey(KeyCode key) => _config.Features.Autopress.ToggleKey = key;
+        protected override void PersistToggleCombo(KeyCombo combo) => _config.Features.Autopress.ToggleKey = combo;
 
         public override void Dispose()
         {
