@@ -59,29 +59,56 @@
                     <TextBlock Grid.Row="4" Grid.Column="4" HorizontalAlignment="Left"
                                VerticalAlignment="Center" Text="%" />
                 </Grid>
+                <!--  BUILDS  -->
+                <TextBlock Margin="0,10,0,5" FontSize="16" FontWeight="Bold" Text="Builds" />
+                <Grid RowDefinitions="Auto, 5, Auto" ColumnDefinitions="*, 5, Auto, 5, Auto">
+                    <ComboBox Grid.Row="0" Grid.Column="0"
+                              ItemsSource="{Binding BuildNames}"
+                              SelectedItem="{Binding SelectedBuild}" />
+                    <Button Grid.Row="0" Grid.Column="2" Command="{Binding LoadBuildCommand}"
+                            ToolTip.Tip="Load selected build">
+                        <i:Icon Value="fa fa-folder-open" />
+                    </Button>
+                    <Button Grid.Row="0" Grid.Column="4" Command="{Binding DeleteBuildCommand}"
+                            ToolTip.Tip="Delete selected build">
+                        <i:Icon Value="fa fa-trash" />
+                    </Button>
+                    <TextBox Grid.Row="2" Grid.Column="0"
+                             Text="{Binding NewBuildName}"
+                             Watermark="Build name…" />
+                    <Button Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3"
+                            Command="{Binding SaveBuildCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />
+                            <TextBlock Text="Save" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
                 <!--  CONSTANT KEYPRESS  -->
                 <TextBlock Margin="0,10,0,5" FontSize="16" FontWeight="Bold" Text="Constant keypress" />
-                <ItemsControl MinHeight="40" Padding="10" Background="White"
-                              BorderBrush="{DynamicResource Highlight100}"
-                              BorderThickness="1"
-                              ItemsSource="{Binding ConstantCommands}">
-                    <ItemsControl.Styles>
-                        <Style Selector="ItemsControl > ContentPresenter">
-                            <Setter Property="Padding" Value="10, 3, 10, 3" />
-                        </Style>
-                    </ItemsControl.Styles>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Grid.Column="0" Classes="CommandContainer" Orientation="Horizontal">
-                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Key" />
-                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding KeyToPress, Converter={StaticResource KeyCodeConverter}, UpdateSourceTrigger=LostFocus}" />
-                                <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].((vm:AutopressPageViewModel)DataContext).RemoveConstantCommandCommand}" CommandParameter="{Binding .}">
-                                    <i:Icon Value="fa fa-minus" />
-                                </Button>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <ScrollViewer MaxHeight="150">
+                    <ItemsControl MinHeight="40" Padding="10" Background="White"
+                                  BorderBrush="{DynamicResource Highlight100}"
+                                  BorderThickness="1"
+                                  ItemsSource="{Binding ConstantCommands}">
+                        <ItemsControl.Styles>
+                            <Style Selector="ItemsControl > ContentPresenter">
+                                <Setter Property="Padding" Value="10, 3, 10, 3" />
+                            </Style>
+                        </ItemsControl.Styles>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Grid.Column="0" Classes="CommandContainer" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Key" />
+                                    <TextBox Width="50" Margin="0,0,5,0" Text="{Binding KeyToPress, Converter={StaticResource KeyCodeConverter}, UpdateSourceTrigger=LostFocus}" />
+                                    <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].((vm:AutopressPageViewModel)DataContext).RemoveConstantCommandCommand}" CommandParameter="{Binding .}">
+                                        <i:Icon Value="fa fa-minus" />
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
                 <StackPanel Margin="0,5,0,5" Orientation="Horizontal">
                     <Button Command="{Binding AddConstantCommandCommand}">
                         <i:Icon Value="fa fa-plus" />

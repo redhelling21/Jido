@@ -30,13 +30,13 @@ Because I'm too lazy to create issues, here's a list of things I want to do with
   - [x] Save config in json
   - [ ] Allow the load of multiple loadouts
   - [x] Configure delay for a new keypress & pressing duration
-  - [ ] Randomize delays
+  - [x] Randomize delays
 - [ ] Bulk item click
-- [ ] Empty inventory
-  - [ ] Implement
-  - [ ] Make it work when selling to a vendor or a player
-  - [ ] Use currency on highlighted items
-  - [ ] Take highlighted items into inventory
+- [x] Empty inventory
+  - [x] Implement
+  - [x] Make it work when selling to a vendor or a player
+  - [x] Use currency on highlighted items
+  - [x] Take highlighted items into inventory
 - [ ] Sockets recipe spammer
 - [ ] Expedition
     - [ ] Tujen haggler
@@ -46,4 +46,4 @@ Because I'm too lazy to create issues, here's a list of things I want to do with
 - [ ] Autoclicker
 - [ ] Chaos recipe
 - [ ] Logout macro
-- [ ] Logs in-app
+- [x] Logs in-app

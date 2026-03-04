@@ -160,6 +160,12 @@ public class AutopressConfig
     public List<ConstantCommand> ConstantCommands { get; set; } = new();
 }
 
+public class AutopressBuild
+{
+    public string Name { get; set; } = string.Empty;
+    public AutopressConfig Config { get; set; } = new();
+}
+
 public class FillInventoryConfig
 {
     public KeyCombo ToggleKey { get; set; } = new(KeyCode.VcF2, ctrl: true);

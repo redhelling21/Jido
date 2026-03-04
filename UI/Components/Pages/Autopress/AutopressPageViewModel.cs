@@ -26,6 +26,14 @@ namespace Jido.UI.Components.Pages.Autopress
         [ObservableProperty]
         private double intervalsRandomizationRatio;
 
+        [ObservableProperty]
+        private string newBuildName = string.Empty;
+
+        [ObservableProperty]
+        private string? selectedBuild;
+
+        public ObservableCollection<string> BuildNames { get; } = new();
+
         public ObservableCollection<HighLevelCommandViewModel> ScheduledCommands { get; } =
             new ObservableCollection<HighLevelCommandViewModel>();
 
@@ -92,10 +100,18 @@ namespace Jido.UI.Components.Pages.Autopress
             ConstantCommands = new ObservableCollection<ConstantCommandViewModel>(
                 _mapper.Map<List<ConstantCommandViewModel>>(_autopressService.ConstantCommands)
             );
+            foreach (var b in _autopressService.Builds)
+                BuildNames.Add(b.Name);
         }
 
         private void OnAutopressStatusChange(object? sender, ServiceStatus status)
         { }
+
+        partial void OnSelectedBuildChanged(string? value)
+        {
+            if (value is not null)
+                NewBuildName = value;
+        }
 
         public void Dispose()
         {
@@ -189,16 +205,51 @@ namespace Jido.UI.Components.Pages.Autopress
         [RelayCommand]
         private void SaveAutoPressConfig()
         {
-            if (_autopressService is not null)
-            {
-                var config = new AutopressConfig();
-                config.ConstantCommands = _mapper.Map<List<ConstantCommand>>(ConstantCommands.ToList());
-                config.ScheduledCommands = _mapper.Map<List<HighLevelCommand>>(ScheduledCommands.ToList());
-                config.ClickDelay = ClickDelay;
-                config.IntervalRandomizationRatio = IntervalsRandomizationRatio / 100;
-                _autopressService.UpdateConfig(config);
-            }
+            _autopressService?.UpdateConfig(BuildCurrentConfig());
         }
+
+        [RelayCommand]
+        private void SaveBuild()
+        {
+            var name = NewBuildName.Trim();
+            if (string.IsNullOrEmpty(name) || _autopressService is null) return;
+            _autopressService.SaveBuild(name, BuildCurrentConfig());
+            if (!BuildNames.Contains(name))
+                BuildNames.Add(name);
+            SelectedBuild = name;
+        }
+
+        [RelayCommand]
+        private void LoadBuild()
+        {
+            if (SelectedBuild is null || _autopressService is null) return;
+            _autopressService.LoadBuild(SelectedBuild);
+            ClickDelay = _autopressService.ClickDelay;
+            IntervalsRandomizationRatio = _autopressService.IntervalRandomizationRatio * 100;
+            ScheduledCommands.Clear();
+            foreach (var cmd in _mapper.Map<List<HighLevelCommandViewModel>>(_autopressService.ScheduledCommands))
+                ScheduledCommands.Add(cmd);
+            ConstantCommands.Clear();
+            foreach (var cmd in _mapper.Map<List<ConstantCommandViewModel>>(_autopressService.ConstantCommands))
+                ConstantCommands.Add(cmd);
+        }
+
+        [RelayCommand]
+        private void DeleteBuild()
+        {
+            if (SelectedBuild is null || _autopressService is null) return;
+            _autopressService.DeleteBuild(SelectedBuild);
+            BuildNames.Remove(SelectedBuild);
+            SelectedBuild = BuildNames.Count > 0 ? BuildNames[0] : null;
+        }
+
+        private AutopressConfig BuildCurrentConfig() => new()
+        {
+            ConstantCommands = _mapper.Map<List<ConstantCommand>>(ConstantCommands.ToList()),
+            ScheduledCommands = _mapper.Map<List<HighLevelCommand>>(ScheduledCommands.ToList()),
+            ClickDelay = ClickDelay,
+            IntervalRandomizationRatio = IntervalsRandomizationRatio / 100,
+        };
 
         #endregion commands
     }
