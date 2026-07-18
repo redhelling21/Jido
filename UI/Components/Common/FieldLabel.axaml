@@ -5,27 +5,56 @@
         xmlns:i="https://github.com/projektanker/icons.avalonia">
     <Design.PreviewWith>
         <StackPanel Margin="20" Spacing="10">
-            <controls:FieldLabel Text="Click delay" Tooltip="Time in milliseconds between each click action" />
+            <controls:FieldLabel FontSize="16" FontWeight="Bold" Text="Empty inventory"
+                                 Hint="Ctrl+clicks every unprotected inventory slot to stash/sell it" />
+            <controls:FieldLabel Text="Capture ratio" Hint="Portion of the screen to scan. Lower values improve performance but may miss items near the edges." />
             <controls:FieldLabel Text="Toggle key" />
         </StackPanel>
     </Design.PreviewWith>
 
     <Style Selector="controls|FieldLabel">
-        <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Template">
             <ControlTemplate>
-                <StackPanel Orientation="Horizontal" Spacing="4"
-                            HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBlock Text="{TemplateBinding Text}" VerticalAlignment="Center" />
+                <!--  Background="Transparent" is load-bearing: a panel with a null background
+                      is skipped by hit-testing, so without it only the 11px glyph itself would
+                      respond to the pointer. With it, the whole label is one hover target and
+                      the tooltip belongs to the label rather than to the icon.  -->
+                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
+                            Background="Transparent"
+                            ToolTip.Tip="{TemplateBinding Hint}"
+                            ToolTip.ShowDelay="250"
+                            ToolTip.Placement="{TemplateBinding HintPlacement}"
+                            ToolTip.HorizontalOffset="{TemplateBinding HintHorizontalOffset}"
+                            ToolTip.VerticalOffset="{TemplateBinding HintVerticalOffset}">
+                    <TextBlock Text="{TemplateBinding Text}"
+                               FontSize="{TemplateBinding FontSize}"
+                               FontWeight="{TemplateBinding FontWeight}"
+                               VerticalAlignment="Center" />
                     <i:Icon Value="fa fa-circle-info"
-                            FontSize="12"
-                            Foreground="{DynamicResource Highlight400}"
+                            FontSize="11"
+                            Foreground="{DynamicResource Highlight600}"
                             VerticalAlignment="Center"
-                            IsVisible="{TemplateBinding Tooltip, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"
-                            ToolTip.Tip="{TemplateBinding Tooltip}" />
+                            IsHitTestVisible="False"
+                            IsVisible="{TemplateBinding Hint, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}">
+                        <i:Icon.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                            </Transitions>
+                        </i:Icon.Transitions>
+                    </i:Icon>
                 </StackPanel>
             </ControlTemplate>
         </Setter>
+    </Style>
+
+    <!--  Opacity is driven entirely by styles: a local value set inside the template
+          would outrank the :pointerover setter and the icon would never brighten.  -->
+    <Style Selector="controls|FieldLabel /template/ i|Icon">
+        <Setter Property="Opacity" Value="0.35" />
+    </Style>
+
+    <Style Selector="controls|FieldLabel:pointerover /template/ i|Icon">
+        <Setter Property="Opacity" Value="1" />
     </Style>
 </Styles>

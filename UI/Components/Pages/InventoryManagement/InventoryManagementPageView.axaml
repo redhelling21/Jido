@@ -37,12 +37,9 @@
                 <!--  LEFT COLUMN  -->
                 <StackPanel Grid.Column="0" HorizontalAlignment="Left">
                     <!--  EMPTY INV  -->
-                    <StackPanel Orientation="Horizontal" Margin="0,10,0,5" Spacing="6">
-                        <TextBlock FontSize="16" FontWeight="Bold" Text="Empty inventory" VerticalAlignment="Center" />
-                        <i:Icon Value="fa fa-circle-info" FontSize="12" Foreground="{DynamicResource Highlight400}"
-                                VerticalAlignment="Center"
-                                ToolTip.Tip="Ctrl+clicks every unprotected inventory slot to stash/sell it" />
-                    </StackPanel>
+                    <common:FieldLabel Margin="0,10,0,5" FontSize="16" FontWeight="Bold"
+                                       HorizontalAlignment="Left" Text="Empty inventory"
+                                       Hint="Ctrl+clicks every unprotected inventory slot to stash/sell it" />
                     <Grid ColumnDefinitions="Auto, 5, *" RowDefinitions="Auto, 5, Auto, 5, Auto">
                         <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                                    VerticalAlignment="Center" Text="Key" />
@@ -67,12 +64,9 @@
                     <Border Height="1" Margin="0,15,0,5" Background="{DynamicResource Highlight100}" />
 
                     <!--  FILL INV  -->
-                    <StackPanel Orientation="Horizontal" Margin="0,5,0,5" Spacing="6">
-                        <TextBlock FontSize="16" FontWeight="Bold" Text="Fill inventory" VerticalAlignment="Center" />
-                        <i:Icon Value="fa fa-circle-info" FontSize="12" Foreground="{DynamicResource Highlight400}"
-                                VerticalAlignment="Center"
-                                ToolTip.Tip="Ctrl+clicks highlighted items in stash to put them in the inventory" />
-                    </StackPanel>
+                    <common:FieldLabel Margin="0,5,0,5" FontSize="16" FontWeight="Bold"
+                                       HorizontalAlignment="Left" Text="Fill inventory"
+                                       Hint="Ctrl+clicks highlighted items in stash to put them in the inventory" />
                     <Grid ColumnDefinitions="Auto, 5, *" RowDefinitions="Auto, 5, Auto">
                         <!--  Row 0: Toggle key  -->
                         <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
@@ -102,12 +96,9 @@
                 <!--  RIGHT COLUMN  -->
                 <StackPanel Grid.Column="2" HorizontalAlignment="Left">
                     <!--  BULK USE ITEM  -->
-                    <StackPanel Orientation="Horizontal" Margin="0,10,0,5" Spacing="6">
-                        <TextBlock FontSize="16" FontWeight="Bold" Text="Bulk use item" VerticalAlignment="Center" />
-                        <i:Icon Value="fa fa-circle-info" FontSize="12" Foreground="{DynamicResource Highlight400}"
-                                VerticalAlignment="Center"
-                                ToolTip.Tip="Uses the currency under the mouse on all highlighted items in stash" />
-                    </StackPanel>
+                    <common:FieldLabel Margin="0,10,0,5" FontSize="16" FontWeight="Bold"
+                                       HorizontalAlignment="Left" Text="Bulk use item"
+                                       Hint="Uses the currency under the mouse on all highlighted items in stash" />
                     <Grid ColumnDefinitions="Auto, 5, *" RowDefinitions="Auto, 5, Auto">
                         <!--  Row 0: Toggle key  -->
                         <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"

@@ -35,7 +35,7 @@
                          Text="{Binding CycleDelayMs}" />
                 <common:FieldLabel Grid.Row="0" Grid.Column="4" HorizontalAlignment="Left"
                                    Margin="4,0,0,0" Text="ms"
-                                   Tooltip="How long to wait between each screen capture and click cycle" />
+                                   Hint="How long to wait between each screen capture and click cycle" />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
                            VerticalAlignment="Center" Text="Capture ratio" />
@@ -43,7 +43,7 @@
                          Text="{Binding CaptureRatioPercent}" />
                 <common:FieldLabel Grid.Row="2" Grid.Column="4" HorizontalAlignment="Left"
                                    Margin="4,0,0,0" Text="%"
-                                   Tooltip="Portion of the screen to scan. Lower values improve performance but may miss items near the edges." />
+                                   Hint="Portion of the screen to scan. Lower values improve performance but may miss items near the edges." />
 
                 <Button Grid.Row="4" Grid.Column="4" HorizontalAlignment="Right"
                         Command="{Binding SaveAutolootConfigCommand}">
