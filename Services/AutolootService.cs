@@ -65,7 +65,7 @@ namespace Jido.Services
         protected override void StopRoutine()
         {
             _logger.LogInformation("Autoloot stopped");
-            _cts?.Cancel();
+            CancelCts();
             Status = ServiceStatus.STOPPED;
         }
 

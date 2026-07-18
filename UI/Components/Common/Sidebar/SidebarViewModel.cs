@@ -1,4 +1,5 @@
 using System;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Jido.Services;
@@ -41,17 +42,21 @@ namespace Jido.UI.Components.Common.Sidebar
 
         private void OnAnyStatusChanged(object? sender, ServiceStatusChangedEventArgs e)
         {
-            switch (e.ServiceName)
+            // Raised by a non-UI thread, so we need to pass the execution to the UI one
+            Dispatcher.UIThread.Post(() =>
             {
-                case ServiceNames.Macro: MacroStatus = e.Status; break;
-                case ServiceNames.Autoloot: AutolootStatus = e.Status; break;
-                case ServiceNames.Autopress: AutopressStatus = e.Status; break;
-                case ServiceNames.InventoryManagement:
-                case ServiceNames.FillInventory:
-                case ServiceNames.BulkUseItem:
-                    InventoryManagementStatus = e.Status;
-                    break;
-            }
+                switch (e.ServiceName)
+                {
+                    case ServiceNames.Macro: MacroStatus = e.Status; break;
+                    case ServiceNames.Autoloot: AutolootStatus = e.Status; break;
+                    case ServiceNames.Autopress: AutopressStatus = e.Status; break;
+                    case ServiceNames.InventoryManagement:
+                    case ServiceNames.FillInventory:
+                    case ServiceNames.BulkUseItem:
+                        InventoryManagementStatus = e.Status;
+                        break;
+                }
+            });
         }
 
         public void Dispose()

@@ -10,7 +10,6 @@ namespace Jido.Utils
     public static class SimulationUtils
     {
         private static readonly EventSimulator _simulator = new EventSimulator();
-        private static readonly Random _rng = new Random();
 
         [DllImport("user32.dll")]
         private static extern bool GetCursorPos(out POINT lpPoint);
@@ -41,8 +40,8 @@ namespace Jido.Utils
                     var cy = start.Y + (y - start.Y) * eased;
 
                     double jitter = (1 - eased) * 1.5;
-                    cx += (_rng.NextDouble() - 0.5) * jitter;
-                    cy += (_rng.NextDouble() - 0.5) * jitter;
+                    cx += (Random.Shared.NextDouble() - 0.5) * jitter;
+                    cy += (Random.Shared.NextDouble() - 0.5) * jitter;
 
                     _simulator.SimulateMouseMovement((short)cx, (short)cy);
                     await Task.Delay(stepDelay, cancellationToken);

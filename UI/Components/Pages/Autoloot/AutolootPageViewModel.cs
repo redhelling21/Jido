@@ -1,4 +1,5 @@
 using System;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Jido.Services;
@@ -31,8 +32,9 @@ namespace Jido.UI.Components.Pages.Autoloot
             autolootService.AverageCycleMsUpdated += OnAverageCycleMsUpdated;
         }
 
+        // Raised from the autoloot routine thread, so pass it to the UI one
         private void OnAverageCycleMsUpdated(object? sender, double ms) =>
-            AvgCycleMs = $"{ms:F1} ms";
+            Dispatcher.UIThread.Post(() => AvgCycleMs = $"{ms:F1} ms");
 
         [RelayCommand]
         private void SaveAutolootConfig()
