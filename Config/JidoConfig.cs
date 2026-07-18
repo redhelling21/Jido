@@ -4,7 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+using System.Threading;
 using Jido.Models;
 using Jido.Utils;
 using Microsoft.Extensions.Logging;
@@ -78,7 +78,7 @@ public class JidoConfig
         try
         {
             var json = JsonSerializer.Serialize(this, _serializerOptions);
-            File.WriteAllText(PersistentFileLocation, json);
+            WriteAtomic(PersistentFileLocation, json);
         }
         catch (Exception ex)
         {
@@ -87,18 +87,25 @@ public class JidoConfig
     }
 
     /// <summary>
-    /// Persist `this` in a file asynchronously
+    /// Write <paramref name="contents"/> to <paramref name="path"/> without ever leaving the
+    /// destination in a partially-written state.
     /// </summary>
-    public async Task PersistAsync()
+    private static void WriteAtomic(string path, string contents)
     {
-        try
+        var temp = path + ".tmp";
+        File.WriteAllText(temp, contents);
+        const int maxAttempts = 5;
+        for (var attempt = 1; ; attempt++)
         {
-            var json = JsonSerializer.Serialize(this, _serializerOptions);
-            await File.WriteAllTextAsync(PersistentFileLocation, json);
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "Failed to save config to {Path}.", PersistentFileLocation);
+            try
+            {
+                File.Move(temp, path, overwrite: true);
+                return;
+            }
+            catch (Exception ex) when ((ex is IOException or UnauthorizedAccessException) && attempt < maxAttempts)
+            {
+                Thread.Sleep(20 * attempt);
+            }
         }
     }
 

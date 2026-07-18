@@ -64,7 +64,7 @@ namespace Jido.Services
 
         protected override void StopRoutine()
         {
-            _cts?.Cancel();
+            CancelCts();
             Status = ServiceStatus.STOPPED;
         }
 

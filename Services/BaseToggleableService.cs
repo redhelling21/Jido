@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper.Configuration.Conventions;
 using Jido.Config;
 using Jido.Utils;
 
@@ -16,13 +17,39 @@ namespace Jido.Services
 
         protected CancellationTokenSource? _cts;
 
-        // Cancel and dispose the current CTS (if any) and creates a fresh one
+        // Cancel and dispose the current CTS (if any) and create a fresh one.
+        // A plain read-cancel-assign would let two callers dispose the same CTS twice
         protected CancellationTokenSource ResetCts()
         {
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts = new CancellationTokenSource();
-            return _cts;
+            var fresh = new CancellationTokenSource();
+            // Replace the content of the ref, the cancel the previous one
+            var previous = Interlocked.Exchange(ref _cts, fresh);
+            if (previous is not null)
+            {
+                try
+                {
+                    previous.Cancel();
+                }
+                catch (ObjectDisposedException) { }
+                previous.Dispose();
+            }
+            return fresh;
+        }
+
+        // Cancel the in-flight routine, if any, without racing a concurrent ResetCts/Dispose.
+        protected void CancelCts()
+        {
+            var current = Volatile.Read(ref _cts);
+            if (current is null)
+                return;
+            try
+            {
+                current.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Already torn down by a concurrent ResetCts or Dispose — nothing to cancel.
+            }
         }
 
         public KeyCombo ToggleKey => _toggleCombo;
@@ -91,8 +118,17 @@ namespace Jido.Services
         {
             _macroService.StatusChanged -= OnMacroStatusChanged;
             _keyHooksManager.UnregisterCombo(_toggleCombo);
-            _cts?.Cancel();
-            _cts?.Dispose();
+            // Free the ref, then cancel what was inside
+            var cts = Interlocked.Exchange(ref _cts, null);
+            if (cts is not null)
+            {
+                try
+                {
+                    cts.Cancel();
+                }
+                catch (ObjectDisposedException) { }
+                cts.Dispose();
+            }
         }
     }
 }

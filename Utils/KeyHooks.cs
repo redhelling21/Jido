@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using SharpHook;
 using SharpHook.Data;
@@ -12,10 +14,16 @@ namespace Jido.Utils
         private TaskPoolGlobalHook _hook = new();
         private readonly ConcurrentDictionary<KeyCombo, EventHandler> _comboEvents = new();
         private readonly ConcurrentDictionary<KeyCode, byte> _pressedKeys = new();
-        public Dictionary<MouseButton, List<EventHandler>> _mouseClickedEvents = new();
+        // Guarded by _mouseLock: registration happens at startup and removal at shutdown, while
+        // OnMouseClicked reads on the SharpHook dispatch thread.
+        private readonly Dictionary<MouseButton, List<EventHandler>> _mouseClickedEvents = new();
+        private readonly object _mouseLock = new();
 
         // Set to true while ListenNextCombo is waiting; suppresses normal combo dispatch.
         private volatile bool _isListening;
+
+        // 0 = idle, 1 = a listen is in flight. Guards against overlapping ListenNextCombo calls.
+        private int _listenInProgress;
 
         private static readonly HashSet<KeyCode> ModifierKeyCodes =
             new()
@@ -50,15 +58,21 @@ namespace Jido.Utils
 
         public Task<KeyCombo> ListenNextCombo()
         {
-            var tcs = new TaskCompletionSource<KeyCombo>();
+            // Block overlapping listens
+            if (Interlocked.CompareExchange(ref _listenInProgress, 1, 0) != 0)
+                throw new InvalidOperationException("A combo listen is already in progress");
+
+            // So the await of the caller won't run on the hook thread
+            var tcs = new TaskCompletionSource<KeyCombo>(TaskCreationOptions.RunContinuationsAsynchronously);
             EventHandler<KeyboardHookEventArgs> handler = null!;
             handler = (sender, e) =>
             {
                 var keyCode = e.RawEvent.Keyboard.KeyCode;
                 if (ModifierKeyCodes.Contains(keyCode))
                     return; // wait for the non-modifier key
-                _isListening = false;
                 _hook.KeyPressed -= handler;
+                _isListening = false;
+                Interlocked.Exchange(ref _listenInProgress, 0);
                 tcs.SetResult(BuildCombo(keyCode));
             };
             _isListening = true;
@@ -74,17 +88,25 @@ namespace Jido.Utils
 
         public void RegisterMouseClick(MouseButton button, EventHandler clicked)
         {
-            if (!_mouseClickedEvents.ContainsKey(button))
-                _mouseClickedEvents.Add(button, new List<EventHandler>());
-            _mouseClickedEvents[button].Add(clicked);
+            lock (_mouseLock)
+            {
+                if (!_mouseClickedEvents.TryGetValue(button, out var handlers))
+                {
+                    handlers = new List<EventHandler>();
+                    _mouseClickedEvents[button] = handlers;
+                }
+                handlers.Add(clicked);
+            }
         }
 
         public void UnRegisterMouseClick(MouseButton button, EventHandler clicked)
         {
-            if (_mouseClickedEvents.ContainsKey(button))
-                _mouseClickedEvents[button].Remove(clicked);
-            else
-                throw new InvalidOperationException("Button not registered");
+            lock (_mouseLock)
+            {
+                if (!_mouseClickedEvents.TryGetValue(button, out var handlers))
+                    throw new InvalidOperationException("Button not registered");
+                handlers.Remove(clicked);
+            }
         }
 
         private void OnKeyPressed(object? sender, KeyboardHookEventArgs args)
@@ -107,8 +129,16 @@ namespace Jido.Utils
 
         private void OnMouseClicked(object? sender, MouseHookEventArgs args)
         {
-            if (_mouseClickedEvents.ContainsKey(args.RawEvent.Mouse.Button))
-                _mouseClickedEvents[args.RawEvent.Mouse.Button]?.ForEach(e => e.Invoke(sender, args));
+            EventHandler[] snapshot;
+            lock (_mouseLock)
+            {
+                if (!_mouseClickedEvents.TryGetValue(args.RawEvent.Mouse.Button, out var handlers))
+                    return;
+                snapshot = handlers.ToArray();
+            }
+            // Invoke outside the lock: handlers run arbitrary service code.
+            foreach (var handler in snapshot)
+                handler.Invoke(sender, args);
         }
 
         private KeyCombo BuildCombo(KeyCode key) =>

@@ -113,10 +113,15 @@ namespace Jido.Services
         {
             if (Status != ServiceStatus.STOPPED)
                 StopRoutine();
+            var replaced = ScheduledCommands;
             config.ToggleKey = ToggleKey;
             _config.Features.Autopress = config;
             _config.Persist();
             InitFromConfig();
+            // If the commands were replaced, dispose the previous ones
+            if (replaced is not null && !ReferenceEquals(replaced, ScheduledCommands))
+                foreach (var cmd in replaced)
+                    cmd.Dispose();
         }
 
         public IReadOnlyList<AutopressBuild> Builds => _builds.AsReadOnly();
@@ -145,14 +150,26 @@ namespace Jido.Services
         {
             var build = _builds.FirstOrDefault(b => b.Name == name);
             if (build is null) return;
-            var copy = new AutopressConfig
-            {
-                ClickDelay = build.Config.ClickDelay,
-                IntervalRandomizationRatio = build.Config.IntervalRandomizationRatio,
-                ScheduledCommands = new List<HighLevelCommand>(build.Config.ScheduledCommands),
-                ConstantCommands = new List<ConstantCommand>(build.Config.ConstantCommands),
-            };
+            var copy = DeepCopy(build.Config);
+            if (copy is null) return;
             UpdateConfig(copy);
+        }
+
+        /// <summary>
+        /// Round-trips a config through JSON to produce a fully independent object graph
+        /// </summary>
+        private AutopressConfig? DeepCopy(AutopressConfig source)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(source, _buildSerializerOptions);
+                return JsonSerializer.Deserialize<AutopressConfig>(json, _buildSerializerOptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to copy autopress build configuration.");
+                return null;
+            }
         }
 
         public void DeleteBuild(string name)
@@ -223,9 +240,18 @@ namespace Jido.Services
         {
             // Guard against double-stop: called from Toggle, SuspendAutoPress, UpdateConfig, and
             // the base class macro-stop handler — any of which may race with each other.
-            if (_cts is null || _cts.IsCancellationRequested)
+            // Read _cts once: a concurrent ResetCts can swap it between the check and the Cancel.
+            var cts = Volatile.Read(ref _cts);
+            if (cts is null || cts.IsCancellationRequested)
                 return;
-            _cts.Cancel();
+            try
+            {
+                cts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                return; 
+            }
 
             _suspendTimer.Stop();
 
