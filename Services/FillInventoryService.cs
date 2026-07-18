@@ -84,7 +84,7 @@ namespace Jido.Services
 
                 var cfg = Config;
                 // Read only the left-half of the screen, where the stash is
-                var region = new Rectangle(0, 0, _config.Screen.Width / 2, _config.Screen.Height);
+                var region = new Rectangle(0, 0, ScreenUtils.PrimaryWidth / 2, ScreenUtils.PrimaryHeight);
 
                 const int MaxPasses = 20;
                 int pass = 0;

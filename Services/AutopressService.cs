@@ -18,8 +18,7 @@ namespace Jido.Services
 {
     public class AutopressService : BaseToggleableService, IAutopressService
     {
-        private static readonly string _buildsFolder =
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "autopress-builds");
+        private static readonly string _buildsFolder = AppPaths.BuildsFolder;
 
         private static readonly JsonSerializerOptions _buildSerializerOptions = new()
         {

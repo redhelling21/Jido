@@ -87,11 +87,15 @@ namespace Jido.Services
                 // Snapshot config once — changes require a restart to apply
                 var cfg = _config.Features.Autoloot;
 
-                int width = (int)(_config.Screen.Width * cfg.CaptureRatio);
-                int height = (int)(_config.Screen.Height * cfg.CaptureRatio);
+                // Detected fresh on each start, so a resolution change is picked up on restart
+                int screenWidth = ScreenUtils.PrimaryWidth;
+                int screenHeight = ScreenUtils.PrimaryHeight;
+
+                int width = (int)(screenWidth * cfg.CaptureRatio);
+                int height = (int)(screenHeight * cfg.CaptureRatio);
                 // Top-left pixel of the rectangle
-                int captureX = (_config.Screen.Width - width) / 2;
-                int captureY = (_config.Screen.Height - height) / 2;
+                int captureX = (screenWidth - width) / 2;
+                int captureY = (screenHeight - height) / 2;
                 var captureRegion = new Rectangle(captureX, captureY, width, height);
 
                 double imageCenterX = width / 2.0;

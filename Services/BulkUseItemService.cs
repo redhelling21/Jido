@@ -83,7 +83,7 @@ namespace Jido.Services
 
                 var cfg = Config;
                 var fillCfg = _config.Features.FillInventory;
-                var region = new Rectangle(0, 0, _config.Screen.Width / 2, _config.Screen.Height);
+                var region = new Rectangle(0, 0, ScreenUtils.PrimaryWidth / 2, ScreenUtils.PrimaryHeight);
 
                 try
                 {

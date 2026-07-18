@@ -29,26 +29,11 @@
 
             <!--  SCREEN  -->
             <TextBlock Margin="0,15,0,5" FontSize="16" FontWeight="Bold" Text="Screen" />
-            <Grid ColumnDefinitions="Auto, 5, 100, 5, Auto" RowDefinitions="Auto, 5, Auto, 5, Auto">
+            <Grid ColumnDefinitions="Auto, 5, Auto" RowDefinitions="Auto">
                 <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
-                           VerticalAlignment="Center" Text="Width" />
-                <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
-                         Text="{Binding ScreenWidth}" />
-                <TextBlock Grid.Row="0" Grid.Column="4" VerticalAlignment="Center" Text="px" />
-
-                <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
-                           VerticalAlignment="Center" Text="Height" />
-                <TextBox Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"
-                         Text="{Binding ScreenHeight}" />
-                <TextBlock Grid.Row="2" Grid.Column="4" VerticalAlignment="Center" Text="px" />
-
-                <Button Grid.Row="4" Grid.Column="4" HorizontalAlignment="Right"
-                        Command="{Binding SaveScreenConfigCommand}">
-                    <StackPanel Orientation="Horizontal">
-                        <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />
-                        <TextBlock Text="Save" />
-                    </StackPanel>
-                </Button>
+                           VerticalAlignment="Center" Text="Detected resolution :" />
+                <TextBlock Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
+                           FontWeight="Bold" Text="{Binding DetectedResolution}" />
             </Grid>
 
         </StackPanel>
