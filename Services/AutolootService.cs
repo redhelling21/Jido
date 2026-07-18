@@ -145,11 +145,16 @@ namespace Jido.Services
 
                     // Collapse 3-channel gradient to 1 channel by taking per-pixel max
                     Cv2.Split(gradient, out Mat[] ch);
-                    Cv2.Max(ch[0], ch[1], combined);
-                    Cv2.Max(combined, ch[2], combined);
-                    ch[0].Dispose();
-                    ch[1].Dispose();
-                    ch[2].Dispose();
+                    try
+                    {
+                        Cv2.Max(ch[0], ch[1], combined);
+                        Cv2.Max(combined, ch[2], combined);
+                    }
+                    finally
+                    {
+                        foreach (var channel in ch)
+                            channel.Dispose();
+                    }
                     // Then apply threshold
                     Cv2.Threshold(combined, combined, cfg.Threshold, 255, ThresholdTypes.Binary);
 

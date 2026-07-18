@@ -70,7 +70,12 @@ namespace Jido.Utils
             // Group results by location, pick the best match, remove the others close to it, next
             var targets = new List<(int x, int y)>();
             using var work = result.Clone();
-            while (true)
+
+            // Approximate how many corners could fit in the zone we scan
+            var blockArea = Math.Max(1, arm * arm);
+            var maxTargets = Math.Max(1, (work.Rows * work.Cols) / blockArea);
+
+            while (targets.Count < maxTargets)
             {
                 // Best match
                 Cv2.MinMaxLoc(work, out _, out double maxVal, out _, out Point maxLoc);

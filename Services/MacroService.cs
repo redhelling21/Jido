@@ -59,6 +59,9 @@ namespace Jido.Services
             if (combo == _toggleCombo)
                 return _toggleCombo;
 
+            if (_keyHooksManager.IsComboRegistered(combo))
+                return _toggleCombo;
+
             _keyHooksManager.UnregisterCombo(_toggleCombo);
             _toggleCombo = combo;
             _config.ToggleKey = combo;
