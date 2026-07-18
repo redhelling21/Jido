@@ -91,7 +91,6 @@ namespace Jido.Services
         {
             _macroService.StatusChanged -= OnMacroStatusChanged;
             _keyHooksManager.UnregisterCombo(_toggleCombo);
-            _keyHooksManager.Dispose();
             _cts?.Cancel();
             _cts?.Dispose();
         }

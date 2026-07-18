@@ -63,9 +63,17 @@ namespace Jido.Utils
         )
         {
             await MoveMouse(x, y, moveDurationMs, cancellationToken);
-            _simulator.SimulateMousePress(left ? MouseButton.Button1 : MouseButton.Button2);
-            await Task.Delay(50, cancellationToken);
-            _simulator.SimulateMouseRelease(left ? MouseButton.Button1 : MouseButton.Button2);
+            var button = left ? MouseButton.Button1 : MouseButton.Button2;
+            _simulator.SimulateMousePress(button);
+            try
+            {
+                await Task.Delay(50, cancellationToken);
+            }
+            finally
+            {
+                // Always release, even if the routine is cancelled mid-hold
+                _simulator.SimulateMouseRelease(button);
+            }
         }
     }
 }

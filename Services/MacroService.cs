@@ -70,7 +70,6 @@ namespace Jido.Services
         public void Dispose()
         {
             _keyHooksManager.UnregisterCombo(_toggleCombo);
-            _keyHooksManager.Dispose();
         }
     }
 

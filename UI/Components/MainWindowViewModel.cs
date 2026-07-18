@@ -25,8 +25,6 @@ namespace Jido.UI.Components
 
         #endregion Observable properties
 
-        private IHooksManager? _hooksManager;
-
         public SidebarViewModel Sidebar { get; set; } = new();
 
         public MainWindowViewModel()
@@ -34,12 +32,11 @@ namespace Jido.UI.Components
             _content = new HomePageViewModel();
         }
 
-        public MainWindowViewModel(Router<ViewModelBase> router, SidebarViewModel sidebar, IHooksManager hooksManager)
+        public MainWindowViewModel(Router<ViewModelBase> router, SidebarViewModel sidebar)
         {
             Sidebar = sidebar;
             // register route changed event to set content to viewModel, whenever a route changes
             router.CurrentViewModelChanged += viewModel => Content = viewModel;
-            _hooksManager = hooksManager;
 
             // change to HomeView
             router.GoTo<HomePageViewModel>();
@@ -52,7 +49,6 @@ namespace Jido.UI.Components
 
         public void Dispose()
         {
-            _hooksManager?.Dispose();
         }
     }
 }

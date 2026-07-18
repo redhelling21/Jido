@@ -23,6 +23,8 @@ namespace Jido
 {
     public partial class App : Application
     {
+        private ServiceProvider? _services;
+
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
@@ -30,7 +32,8 @@ namespace Jido
 
         public override void OnFrameworkInitializationCompleted()
         {
-            IServiceProvider services = ConfigureServices();
+            ServiceProvider services = ConfigureServices();
+            _services = services;
 
             var logger = services.GetRequiredService<ILogger<App>>();
             logger.LogInformation("Jido v2 starting");
@@ -60,6 +63,15 @@ namespace Jido
                 desktop.MainWindow = new MainWindow
                 {
                     DataContext = services.GetRequiredService<MainWindowViewModel>(),
+                };
+
+                // Dispose the container on exit so every singleton's Dispose actually runs: the
+                // global input hook, autopress timers, OpenCV Mats and the log buffer.
+                desktop.Exit += (_, _) =>
+                {
+                    logger.LogInformation("Jido v2 shutting down");
+                    _services?.Dispose();
+                    _services = null;
                 };
             }
 
