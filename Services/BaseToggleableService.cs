@@ -13,7 +13,11 @@ namespace Jido.Services
         protected readonly JidoConfig _config;
         protected readonly IMacroService _macroService;
         protected readonly IServiceHub _serviceHub;
+        protected readonly string _serviceName;
         private KeyCombo _toggleCombo;
+
+        // Define services that shouldn't run while this one does
+        protected virtual string[] ExclusiveWith => Array.Empty<string>();
 
         protected CancellationTokenSource? _cts;
 
@@ -82,6 +86,7 @@ namespace Jido.Services
             _config = config;
             _macroService = macroService;
             _serviceHub = serviceHub;
+            _serviceName = serviceName;
             _toggleCombo = toggleCombo;
             _keyHooksManager.RegisterCombo(_toggleCombo, (_, _) => Toggle());
             _macroService.StatusChanged += OnMacroStatusChanged;
@@ -90,7 +95,43 @@ namespace Jido.Services
 
         public abstract void Toggle();
 
-        protected abstract void StopRoutine();
+        protected bool CanStartRoutine()
+        {
+            if (_macroService.Status == ServiceStatus.STOPPED)
+                return false;
+
+            foreach (var name in ExclusiveWith)
+            {
+                if (name == _serviceName)
+                    continue;
+                if (_serviceHub.IsActive(name))
+                    return false;
+            }
+            return true;
+        }
+
+        protected void ToggleOneShotRoutine(Func<CancellationToken, Task> routine)
+        {
+            if (Status == ServiceStatus.WORKING)
+            {
+                StopRoutine();
+                return;
+            }
+
+            if (!CanStartRoutine())
+                return;
+
+            // Swap the CTS here rather than inside the task, so the token is in place by the time
+            // Toggle returns and a rapid second press cannot race two ResetCts calls.
+            var token = ResetCts().Token;
+            _ = Task.Run(() => routine(token));
+        }
+
+        protected virtual void StopRoutine()
+        {
+            CancelCts();
+            Status = ServiceStatus.STOPPED;
+        }
 
         protected abstract void PersistToggleCombo(KeyCombo combo);
 

@@ -9,7 +9,8 @@ namespace Jido.Utils
 {
     public static class SimulationUtils
     {
-        private static readonly EventSimulator _simulator = new EventSimulator();
+        // TODO : change when  handling linux
+        public static EventSimulator Simulator { get; } = new EventSimulator();
 
         [DllImport("user32.dll")]
         private static extern bool GetCursorPos(out POINT lpPoint);
@@ -43,13 +44,13 @@ namespace Jido.Utils
                     cx += (Random.Shared.NextDouble() - 0.5) * jitter;
                     cy += (Random.Shared.NextDouble() - 0.5) * jitter;
 
-                    _simulator.SimulateMouseMovement((short)cx, (short)cy);
+                    Simulator.SimulateMouseMovement((short)cx, (short)cy);
                     await Task.Delay(stepDelay, cancellationToken);
                 }
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            _simulator.SimulateMouseMovement(x, y);
+            Simulator.SimulateMouseMovement(x, y);
             await Task.Delay(50, cancellationToken);
         }
 
@@ -63,7 +64,7 @@ namespace Jido.Utils
         {
             await MoveMouse(x, y, moveDurationMs, cancellationToken);
             var button = left ? MouseButton.Button1 : MouseButton.Button2;
-            _simulator.SimulateMousePress(button);
+            Simulator.SimulateMousePress(button);
             try
             {
                 await Task.Delay(50, cancellationToken);
@@ -71,7 +72,7 @@ namespace Jido.Utils
             finally
             {
                 // Always release, even if the routine is cancelled mid-hold
-                _simulator.SimulateMouseRelease(button);
+                Simulator.SimulateMouseRelease(button);
             }
         }
     }

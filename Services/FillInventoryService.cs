@@ -6,14 +6,12 @@ using System.Threading.Tasks;
 using Jido.Config;
 using Jido.Utils;
 using Microsoft.Extensions.Logging;
-using SharpHook;
 using SharpHook.Data;
 
 namespace Jido.Services
 {
     public class FillInventoryService : BaseToggleableService, IFillInventoryService
     {
-        private static readonly EventSimulator _simulator = new EventSimulator();
         private readonly ILogger<FillInventoryService> _logger;
 
         public FillInventoryConfig Config => _config.Features.FillInventory;
@@ -43,38 +41,11 @@ namespace Jido.Services
             _config.Persist();
         }
 
-        public override void Toggle()
-        {
-            if (Status == ServiceStatus.WORKING)
-            {
-                StopRoutine();
-                return;
-            }
+        protected override string[] ExclusiveWith => ServiceGroups.InventoryFeatures;
 
-            if (_macroService.Status == ServiceStatus.STOPPED)
-                return;
-
-            // Prevent the routine from running if another inv-related service runs
-            if (
-                _serviceHub.IsActive(ServiceNames.InventoryManagement) || _serviceHub.IsActive(ServiceNames.BulkUseItem)
-            )
-                return;
-
-            _ = Task.Run(() => FillRoutine(ResetCts().Token));
-        }
-
-        protected override void StopRoutine()
-        {
-            CancelCts();
-            Status = ServiceStatus.STOPPED;
-        }
+        public override void Toggle() => ToggleOneShotRoutine(FillRoutine);
 
         protected override void PersistToggleCombo(KeyCombo combo) => _config.Features.FillInventory.ToggleKey = combo;
-
-        public override void Dispose()
-        {
-            base.Dispose();
-        }
 
         private async Task FillRoutine(CancellationToken token)
         {
@@ -102,7 +73,7 @@ namespace Jido.Services
 
                     try
                     {
-                        _simulator.SimulateKeyPress(KeyCode.VcLeftControl);
+                        SimulationUtils.Simulator.SimulateKeyPress(KeyCode.VcLeftControl);
                         foreach (var (x, y) in targets)
                         {
                             token.ThrowIfCancellationRequested();
@@ -118,7 +89,7 @@ namespace Jido.Services
                     }
                     finally
                     {
-                        _simulator.SimulateKeyRelease(KeyCode.VcLeftControl);
+                        SimulationUtils.Simulator.SimulateKeyRelease(KeyCode.VcLeftControl);
                     }
                     // Loop to re-check we didn't miss a corner on the current pass
                 }

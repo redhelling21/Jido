@@ -5,14 +5,12 @@ using System.Threading.Tasks;
 using Jido.Config;
 using Jido.Utils;
 using Microsoft.Extensions.Logging;
-using SharpHook;
 using SharpHook.Data;
 
 namespace Jido.Services
 {
     public class BulkUseItemService : BaseToggleableService, IBulkUseItemService
     {
-        private static readonly EventSimulator _simulator = new EventSimulator();
         private readonly ILogger<BulkUseItemService> _logger;
 
         public BulkUseItemConfig Config => _config.Features.BulkUseItem;
@@ -42,38 +40,11 @@ namespace Jido.Services
             _config.Persist();
         }
 
-        public override void Toggle()
-        {
-            if (Status == ServiceStatus.WORKING)
-            {
-                StopRoutine();
-                return;
-            }
+        protected override string[] ExclusiveWith => ServiceGroups.InventoryFeatures;
 
-            if (_macroService.Status == ServiceStatus.STOPPED)
-                return;
-
-            if (
-                _serviceHub.IsActive(ServiceNames.FillInventory)
-                || _serviceHub.IsActive(ServiceNames.InventoryManagement)
-            )
-                return;
-
-            _ = Task.Run(() => BulkUseRoutine(ResetCts().Token));
-        }
-
-        protected override void StopRoutine()
-        {
-            CancelCts();
-            Status = ServiceStatus.STOPPED;
-        }
+        public override void Toggle() => ToggleOneShotRoutine(BulkUseRoutine);
 
         protected override void PersistToggleCombo(KeyCombo combo) => _config.Features.BulkUseItem.ToggleKey = combo;
-
-        public override void Dispose()
-        {
-            base.Dispose();
-        }
 
         private async Task BulkUseRoutine(CancellationToken token)
         {
@@ -88,10 +59,10 @@ namespace Jido.Services
                 try
                 {
                     // Shift + right-click at current mouse position
-                    _simulator.SimulateKeyPress(KeyCode.VcLeftShift);
-                    _simulator.SimulateMousePress(MouseButton.Button2);
+                    SimulationUtils.Simulator.SimulateKeyPress(KeyCode.VcLeftShift);
+                    SimulationUtils.Simulator.SimulateMousePress(MouseButton.Button2);
                     await Task.Delay(50, token);
-                    _simulator.SimulateMouseRelease(MouseButton.Button2);
+                    SimulationUtils.Simulator.SimulateMouseRelease(MouseButton.Button2);
 
                     token.ThrowIfCancellationRequested();
 
@@ -115,7 +86,7 @@ namespace Jido.Services
                 }
                 finally
                 {
-                    _simulator.SimulateKeyRelease(KeyCode.VcLeftShift);
+                    SimulationUtils.Simulator.SimulateKeyRelease(KeyCode.VcLeftShift);
                 }
 
                 _logger.LogInformation("BulkUseItem completed");

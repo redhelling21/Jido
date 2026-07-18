@@ -49,6 +49,7 @@ namespace Jido.UI.Components
 
         public void Dispose()
         {
+            (Content as IDisposable)?.Dispose();
         }
     }
 }
