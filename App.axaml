@@ -16,6 +16,7 @@
         <StyleInclude Source="UI/Styles/Sidebar.axaml" />
         <StyleInclude Source="UI/Components/Common/Sidebar/SidebarMenuItem.axaml" />
         <StyleInclude Source="UI/Components/Common/PageWithHeader.axaml" />
+        <StyleInclude Source="UI/Components/Common/FieldLabel.axaml" />
     </Application.Styles>
 
     <Application.Resources>

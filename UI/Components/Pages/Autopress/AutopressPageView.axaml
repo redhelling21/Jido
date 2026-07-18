@@ -50,14 +50,16 @@
                                VerticalAlignment="Center" Text="Click delay" />
                     <TextBox Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"
                              Text="{Binding ClickDelay}" />
-                    <TextBlock Grid.Row="2" Grid.Column="4" HorizontalAlignment="Left"
-                               VerticalAlignment="Center" Text="ms" />
+                    <common:FieldLabel Grid.Row="2" Grid.Column="4" HorizontalAlignment="Left"
+                                       Margin="4,0,0,0" Text="ms"
+                                       Tooltip="When you click, the autopress pauses for this delay" />
                     <TextBlock Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right"
                                VerticalAlignment="Center" Text="Intervals rand" />
                     <TextBox Grid.Row="4" Grid.Column="2" VerticalAlignment="Center"
                              Text="{Binding IntervalsRandomizationRatio}" />
-                    <TextBlock Grid.Row="4" Grid.Column="4" HorizontalAlignment="Left"
-                               VerticalAlignment="Center" Text="%" />
+                    <common:FieldLabel Grid.Row="4" Grid.Column="4" HorizontalAlignment="Left"
+                                       Margin="4,0,0,0" Text="%"
+                                       Tooltip="Randomizes each press interval by up to this percentage" />
                 </Grid>
                 <!--  BUILDS  -->
                 <TextBlock Margin="0,10,0,5" FontSize="16" FontWeight="Bold" Text="Builds" />
@@ -85,7 +87,12 @@
                     </Button>
                 </Grid>
                 <!--  CONSTANT KEYPRESS  -->
-                <TextBlock Margin="0,10,0,5" FontSize="16" FontWeight="Bold" Text="Constant keypress" />
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,5" Spacing="6">
+                    <TextBlock FontSize="16" FontWeight="Bold" Text="Constant keypress" VerticalAlignment="Center" />
+                    <i:Icon Value="fa fa-circle-info" FontSize="11" Foreground="{DynamicResource Highlight400}"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Keys pressed continuously while the autopress is active" />
+                </StackPanel>
                 <ScrollViewer MaxHeight="150">
                     <ItemsControl MinHeight="40" Padding="10" Background="White"
                                   BorderBrush="{DynamicResource Highlight100}"
@@ -119,7 +126,12 @@
                     Background="{DynamicResource Highlight100}" />
             <!--  RIGHT COLUMN  -->
             <Grid Grid.Column="2" ColumnDefinitions="*" RowDefinitions="Auto, *, 5, Auto, 5">
-                <TextBlock Grid.Row="0" FontSize="16" FontWeight="Bold" Text="Scheduled keypress" />
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
+                    <TextBlock FontSize="16" FontWeight="Bold" Text="Scheduled keypress" VerticalAlignment="Center" />
+                    <i:Icon Value="fa fa-circle-info" FontSize="11" Foreground="{DynamicResource Highlight400}"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Commands that fire on their own independent intervals" />
+                </StackPanel>
                 <Border Grid.Row="1">
                     <ScrollViewer>
                         <ItemsControl Name="ScheduledCommands" MinHeight="40" Padding="10" Background="White"

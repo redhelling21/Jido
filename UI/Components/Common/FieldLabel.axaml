@@ -1,0 +1,31 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Jido.UI.Components.Common"
+        xmlns:conv="using:Avalonia.Data.Converters"
+        xmlns:i="https://github.com/projektanker/icons.avalonia">
+    <Design.PreviewWith>
+        <StackPanel Margin="20" Spacing="10">
+            <controls:FieldLabel Text="Click delay" Tooltip="Time in milliseconds between each click action" />
+            <controls:FieldLabel Text="Toggle key" />
+        </StackPanel>
+    </Design.PreviewWith>
+
+    <Style Selector="controls|FieldLabel">
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="4"
+                            HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Text="{TemplateBinding Text}" VerticalAlignment="Center" />
+                    <i:Icon Value="fa fa-circle-info"
+                            FontSize="12"
+                            Foreground="{DynamicResource Highlight400}"
+                            VerticalAlignment="Center"
+                            IsVisible="{TemplateBinding Tooltip, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"
+                            ToolTip.Tip="{TemplateBinding Tooltip}" />
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+</Styles>
