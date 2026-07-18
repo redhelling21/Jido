@@ -52,14 +52,18 @@ public class JidoConfig
                 {
                     foreach (PropertyInfo property in typeof(JidoConfig).GetProperties())
                     {
-                        if (property.GetCustomAttribute<JsonIgnoreAttribute>() == null)
-                            property.SetValue(this, property.GetValue(config));
+                        if (property.GetCustomAttribute<JsonIgnoreAttribute>() != null)
+                            continue;
+                        var value = property.GetValue(config);
+                        if (value != null)
+                            property.SetValue(this, value);
                     }
                 }
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Failed to load config from {Path}, using defaults.", PersistentFileLocation);
+                BackupUnreadableConfig();
             }
         }
         else
@@ -83,6 +87,23 @@ public class JidoConfig
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Failed to save config to {Path}.", PersistentFileLocation);
+        }
+    }
+
+    /// <summary>
+    /// Copies an unreadable settings file aside so the user can recover hand-edited values.
+    /// </summary>
+    private void BackupUnreadableConfig()
+    {
+        try
+        {
+            var backup = PersistentFileLocation + ".corrupted";
+            File.Copy(PersistentFileLocation, backup, overwrite: true);
+            _logger?.LogWarning("Unreadable config backed up to {Path} before falling back to defaults.", backup);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to back up unreadable config at {Path}.", PersistentFileLocation);
         }
     }
 

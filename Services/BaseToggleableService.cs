@@ -106,6 +106,10 @@ namespace Jido.Services
             if (combo == _toggleCombo)
                 return _toggleCombo;
 
+            // Fallback tothe original combo if the new one is already registered somewhere else
+            if (_keyHooksManager.IsComboRegistered(combo))
+                return _toggleCombo;
+
             _keyHooksManager.UnregisterCombo(_toggleCombo);
             _toggleCombo = combo;
             PersistToggleCombo(combo);

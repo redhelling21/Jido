@@ -33,6 +33,11 @@ namespace Jido.Services
         private readonly System.Timers.Timer _suspendTimer = new() { AutoReset = false };
         private readonly ConcurrentQueue<LowLevelCommand> _queuedCommands = new();
         private readonly List<AutopressBuild> _builds = new();
+
+        // Serialises routine start/stop (hook and timer threads) against config replacement and
+        // command disposal (UI thread). C# locks are reentrant, so UpdateConfig calling StopRoutine
+        // while holding it is fine.
+        private readonly object _commandsLock = new();
         public List<HighLevelCommand> ScheduledCommands { get; private set; }
         public List<ConstantCommand> ConstantCommands { get; private set; }
         public int ClickDelay { get; private set; }
@@ -111,17 +116,20 @@ namespace Jido.Services
 
         public void UpdateConfig(AutopressConfig config)
         {
-            if (Status != ServiceStatus.STOPPED)
-                StopRoutine();
-            var replaced = ScheduledCommands;
-            config.ToggleKey = ToggleKey;
-            _config.Features.Autopress = config;
-            _config.Persist();
-            InitFromConfig();
-            // If the commands were replaced, dispose the previous ones
-            if (replaced is not null && !ReferenceEquals(replaced, ScheduledCommands))
-                foreach (var cmd in replaced)
-                    cmd.Dispose();
+            lock (_commandsLock)
+            {
+                if (Status != ServiceStatus.STOPPED)
+                    StopRoutine();
+                var replaced = ScheduledCommands;
+                config.ToggleKey = ToggleKey;
+                _config.Features.Autopress = config;
+                _config.Persist();
+                InitFromConfig();
+                // If the commands were replaced, dispose the previous ones
+                if (replaced is not null && !ReferenceEquals(replaced, ScheduledCommands))
+                    foreach (var cmd in replaced)
+                        cmd.Dispose();
+            }
         }
 
         public IReadOnlyList<AutopressBuild> Builds => _builds.AsReadOnly();
@@ -223,48 +231,54 @@ namespace Jido.Services
 
         private void StartRoutine()
         {
-            var token = ResetCts().Token;
-            foreach (var cmd in ConstantCommands)
-                _eventSimulator.SimulateKeyPress(cmd.KeyToPress);
+            lock (_commandsLock)
+            {
+                var token = ResetCts().Token;
+                foreach (var cmd in ConstantCommands)
+                    _eventSimulator.SimulateKeyPress(cmd.KeyToPress);
 
-            _ = Task.Run(() => KeyPressRoutine(token));
+                _ = Task.Run(() => KeyPressRoutine(token));
 
-            // Each command enqueues once immediately on Start(), then continues on its own timer.
-            // KeyPressRoutine consumes the shared queue and handles the actual key simulation.
-            foreach (var cmd in ScheduledCommands)
-                cmd.Start(_queuedCommands, IntervalRandomizationRatio);
-            Status = ServiceStatus.IDLE;
+                // Each command enqueues once immediately on Start(), then continues on its own timer.
+                // KeyPressRoutine consumes the shared queue and handles the actual key simulation.
+                foreach (var cmd in ScheduledCommands)
+                    cmd.Start(_queuedCommands, IntervalRandomizationRatio);
+                Status = ServiceStatus.IDLE;
+            }
         }
 
         protected override void StopRoutine()
         {
-            // Guard against double-stop: called from Toggle, SuspendAutoPress, UpdateConfig, and
-            // the base class macro-stop handler — any of which may race with each other.
-            // Read _cts once: a concurrent ResetCts can swap it between the check and the Cancel.
-            var cts = Volatile.Read(ref _cts);
-            if (cts is null || cts.IsCancellationRequested)
-                return;
-            try
+            lock (_commandsLock)
             {
-                cts.Cancel();
+                // Guard against double-stop: called from Toggle, SuspendAutoPress, UpdateConfig, and
+                // the base class macro-stop handler — any of which may race with each other.
+                // Read _cts once: a concurrent ResetCts can swap it between the check and the Cancel.
+                var cts = Volatile.Read(ref _cts);
+                if (cts is null || cts.IsCancellationRequested)
+                    return;
+                try
+                {
+                    cts.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                    return;
+                }
+
+                _suspendTimer.Stop();
+
+                foreach (var cmd in ConstantCommands)
+                    _eventSimulator.SimulateKeyRelease(cmd.KeyToPress);
+
+                foreach (var cmd in ScheduledCommands)
+                    cmd.Stop();
+
+                // Drain stale commands so they don't fire on the next StartRoutine.
+                while (_queuedCommands.TryDequeue(out _)) { }
+
+                Status = ServiceStatus.STOPPED;
             }
-            catch (ObjectDisposedException)
-            {
-                return; 
-            }
-
-            _suspendTimer.Stop();
-
-            foreach (var cmd in ConstantCommands)
-                _eventSimulator.SimulateKeyRelease(cmd.KeyToPress);
-
-            foreach (var cmd in ScheduledCommands)
-                cmd.Stop();
-
-            // Drain stale commands so they don't fire on the next StartRoutine.
-            while (_queuedCommands.TryDequeue(out _)) { }
-
-            Status = ServiceStatus.STOPPED;
         }
 
         private async Task KeyPressRoutine(CancellationToken cancellationToken)
@@ -312,11 +326,14 @@ namespace Jido.Services
             _keyHooksManager.UnRegisterMouseClick(MouseButton.Button1, SuspendAutoPress);
             _suspendTimer?.Dispose();
 
-            foreach (var cmd in ScheduledCommands)
-                cmd.Dispose();
-            foreach (var build in _builds)
-                foreach (var cmd in build.Config.ScheduledCommands)
+            lock (_commandsLock)
+            {
+                foreach (var cmd in ScheduledCommands)
                     cmd.Dispose();
+                foreach (var build in _builds)
+                    foreach (var cmd in build.Config.ScheduledCommands)
+                        cmd.Dispose();
+            }
 
             base.Dispose();
         }

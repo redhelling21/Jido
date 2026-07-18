@@ -56,6 +56,8 @@ namespace Jido.Utils
                 throw new InvalidOperationException("Key combo not registered");
         }
 
+        public bool IsComboRegistered(KeyCombo combo) => _comboEvents.ContainsKey(combo);
+
         public Task<KeyCombo> ListenNextCombo()
         {
             // Block overlapping listens
@@ -156,6 +158,8 @@ namespace Jido.Utils
         void RegisterCombo(KeyCombo combo, EventHandler pressed);
 
         void UnregisterCombo(KeyCombo combo);
+
+        bool IsComboRegistered(KeyCombo combo);
 
         void RegisterMouseClick(MouseButton button, EventHandler clicked);
 
