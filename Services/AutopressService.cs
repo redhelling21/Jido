@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -15,10 +18,21 @@ namespace Jido.Services
 {
     public class AutopressService : BaseToggleableService, IAutopressService
     {
+        private static readonly string _buildsFolder =
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "autopress-builds");
+
+        private static readonly JsonSerializerOptions _buildSerializerOptions = new()
+        {
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+
         private readonly ILogger<AutopressService> _logger;
         private EventSimulator _eventSimulator = new EventSimulator();
         private readonly System.Timers.Timer _suspendTimer = new() { AutoReset = false };
         private readonly ConcurrentQueue<LowLevelCommand> _queuedCommands = new();
+        private readonly List<AutopressBuild> _builds = new();
         public List<HighLevelCommand> ScheduledCommands { get; private set; }
         public List<ConstantCommand> ConstantCommands { get; private set; }
         public int ClickDelay { get; private set; }
@@ -42,8 +56,28 @@ namespace Jido.Services
         {
             _logger = logger;
             InitFromConfig();
+            LoadBuildsFromDisk();
             _suspendTimer.Elapsed += OnSuspendTimerElapsed;
             _keyHooksManager.RegisterMouseClick(MouseButton.Button1, SuspendAutoPress);
+        }
+
+        private void LoadBuildsFromDisk()
+        {
+            if (!Directory.Exists(_buildsFolder)) return;
+            foreach (var file in Directory.GetFiles(_buildsFolder, "*.json"))
+            {
+                try
+                {
+                    var json = File.ReadAllText(file);
+                    var buildConfig = JsonSerializer.Deserialize<AutopressConfig>(json, _buildSerializerOptions);
+                    if (buildConfig != null)
+                        _builds.Add(new AutopressBuild { Name = Path.GetFileNameWithoutExtension(file), Config = buildConfig });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to load autopress build from {Path}.", file);
+                }
+            }
         }
 
         private void InitFromConfig()
@@ -83,6 +117,60 @@ namespace Jido.Services
             _config.Features.Autopress = config;
             _config.Persist();
             InitFromConfig();
+        }
+
+        public IReadOnlyList<AutopressBuild> Builds => _builds.AsReadOnly();
+
+        public void SaveBuild(string name, AutopressConfig config)
+        {
+            try
+            {
+                Directory.CreateDirectory(_buildsFolder);
+                var path = Path.Combine(_buildsFolder, $"{name}.json");
+                File.WriteAllText(path, JsonSerializer.Serialize(config, _buildSerializerOptions));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save autopress build '{Name}'.", name);
+                return;
+            }
+            var existing = _builds.FirstOrDefault(b => b.Name == name);
+            if (existing != null)
+                existing.Config = config;
+            else
+                _builds.Add(new AutopressBuild { Name = name, Config = config });
+        }
+
+        public void LoadBuild(string name)
+        {
+            var build = _builds.FirstOrDefault(b => b.Name == name);
+            if (build is null) return;
+            var copy = new AutopressConfig
+            {
+                ClickDelay = build.Config.ClickDelay,
+                IntervalRandomizationRatio = build.Config.IntervalRandomizationRatio,
+                ScheduledCommands = new List<HighLevelCommand>(build.Config.ScheduledCommands),
+                ConstantCommands = new List<ConstantCommand>(build.Config.ConstantCommands),
+            };
+            UpdateConfig(copy);
+        }
+
+        public void DeleteBuild(string name)
+        {
+            var build = _builds.FirstOrDefault(b => b.Name == name);
+            if (build is null) return;
+            try
+            {
+                var path = Path.Combine(_buildsFolder, $"{name}.json");
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete autopress build '{Name}'.", name);
+                return;
+            }
+            _builds.Remove(build);
         }
 
         public void SuspendAutoPress(object? sender, EventArgs e)
@@ -211,5 +299,10 @@ namespace Jido.Services
         public double IntervalRandomizationRatio { get; }
 
         public void UpdateConfig(AutopressConfig config);
+
+        IReadOnlyList<AutopressBuild> Builds { get; }
+        void SaveBuild(string name, AutopressConfig config);
+        void LoadBuild(string name);
+        void DeleteBuild(string name);
     }
 }
