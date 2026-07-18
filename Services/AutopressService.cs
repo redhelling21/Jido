@@ -285,6 +285,13 @@ namespace Jido.Services
         {
             _keyHooksManager.UnRegisterMouseClick(MouseButton.Button1, SuspendAutoPress);
             _suspendTimer?.Dispose();
+
+            foreach (var cmd in ScheduledCommands)
+                cmd.Dispose();
+            foreach (var build in _builds)
+                foreach (var cmd in build.Config.ScheduledCommands)
+                    cmd.Dispose();
+
             base.Dispose();
         }
     }

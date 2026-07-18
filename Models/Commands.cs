@@ -28,7 +28,7 @@ namespace Jido.Models
     [JsonDerivedType(typeof(HighLevelCommand), typeDiscriminator: "base")]
     [JsonDerivedType(typeof(CompositeHighLevelCommand), typeDiscriminator: "composite")]
     [JsonDerivedType(typeof(BasicHighLevelCommand), typeDiscriminator: "basic")]
-    public class HighLevelCommand
+    public class HighLevelCommand : IDisposable
     {
         public int IntervalInMs { get; set; }
         protected System.Timers.Timer Timer { get; set; } = new System.Timers.Timer();
@@ -56,6 +56,12 @@ namespace Jido.Models
         public void Stop()
         {
             Timer.Stop();
+        }
+
+        public virtual void Dispose()
+        {
+            Timer.Stop();
+            Timer.Dispose();
         }
 
         protected virtual void Enqueue()
@@ -91,6 +97,8 @@ namespace Jido.Models
             : base(intervalInMs)
         {
             Commands = commands;
+            // Dispose the placeholder created by the base field initializer before replacing it.
+            Timer.Dispose();
             Timer = new System.Timers.Timer(IntervalInMs);
             Timer.Elapsed += TimerCallback;
             Timer.AutoReset = true;
@@ -119,6 +127,8 @@ namespace Jido.Models
         {
             Command = command;
 
+            // Dispose the placeholder created by the base field initializer before replacing it.
+            Timer.Dispose();
             Timer = new System.Timers.Timer(IntervalInMs);
             Timer.Elapsed += TimerCallback;
             Timer.AutoReset = true;
