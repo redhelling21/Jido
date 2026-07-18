@@ -90,6 +90,14 @@ namespace Jido.UI.Components.Pages.Logs
                 _allEntries.Add(vm);
                 if (IsVisible(vm))
                     DisplayedEntries.Add(vm);
+
+                // Keep this copy bounded like the provider's buffer
+                if (_allEntries.Count > InMemoryLoggerProvider.MaxEntries)
+                {
+                    var evicted = _allEntries[0];
+                    _allEntries.RemoveAt(0);
+                    DisplayedEntries.Remove(evicted);
+                }
             });
         }
 

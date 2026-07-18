@@ -28,15 +28,15 @@ namespace Jido.Utils
             return (lower, upper);
         }
 
-        //Ensures the Mat is 3-channel BGR
-        public static Mat EnsureBgr(Mat src)
+        // Returns a 3-channel BGR version of src
+        // Never disposes src -> the caller owns both.
+        public static Mat ToBgr(Mat src)
         {
             if (src.Channels() == 3)
-                return src;
+                return src.Clone();
 
             var dst = new Mat();
             Cv2.CvtColor(src, dst, ColorConversionCodes.BGRA2BGR);
-            src.Dispose();
             return dst;
         }
 

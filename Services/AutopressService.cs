@@ -131,12 +131,27 @@ namespace Jido.Services
 
         public IReadOnlyList<AutopressBuild> Builds => _builds.AsReadOnly();
 
+        public static bool IsValidBuildName(string name) =>
+            !string.IsNullOrWhiteSpace(name) && name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+
+        private string? TryGetBuildPath(string name)
+        {
+            if (IsValidBuildName(name))
+                return Path.Combine(_buildsFolder, $"{name}.json");
+
+            _logger.LogWarning("Rejected invalid autopress build name '{Name}'.", name);
+            return null;
+        }
+
         public void SaveBuild(string name, AutopressConfig config)
         {
+            var path = TryGetBuildPath(name);
+            if (path is null)
+                return;
+
             try
             {
                 Directory.CreateDirectory(_buildsFolder);
-                var path = Path.Combine(_buildsFolder, $"{name}.json");
                 File.WriteAllText(path, JsonSerializer.Serialize(config, _buildSerializerOptions));
             }
             catch (Exception ex)
@@ -181,9 +196,13 @@ namespace Jido.Services
         {
             var build = _builds.FirstOrDefault(b => b.Name == name);
             if (build is null) return;
+
+            var path = TryGetBuildPath(name);
+            if (path is null)
+                return;
+
             try
             {
-                var path = Path.Combine(_buildsFolder, $"{name}.json");
                 if (File.Exists(path))
                     File.Delete(path);
             }

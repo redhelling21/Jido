@@ -15,7 +15,9 @@ namespace Jido.Utils.Logging
     // AI-generated, boo !
     public class InMemoryLoggerProvider : ILoggerProvider
     {
-        private readonly List<LogEntry> _buffer = new();
+        public const int MaxEntries = 5000;
+
+        private readonly Queue<LogEntry> _buffer = new();
         private readonly object _lock = new();
 
         public event Action<LogEntry>? EntryAdded;
@@ -25,7 +27,11 @@ namespace Jido.Utils.Logging
         internal void AddEntry(LogEntry entry)
         {
             lock (_lock)
-                _buffer.Add(entry);
+            {
+                _buffer.Enqueue(entry);
+                while (_buffer.Count > MaxEntries)
+                    _buffer.Dequeue();
+            }
             EntryAdded?.Invoke(entry);
         }
 

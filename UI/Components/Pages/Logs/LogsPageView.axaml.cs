@@ -27,7 +27,11 @@ public partial class LogsPageView : UserControl
 
     private void OnEntriesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (e.Action == NotifyCollectionChangedAction.Add)
-            this.FindControl<ScrollViewer>("LogScrollViewer")?.ScrollToEnd();
+        if (e.Action != NotifyCollectionChangedAction.Add || _viewModel is null)
+            return;
+
+        var count = _viewModel.DisplayedEntries.Count;
+        if (count > 0)
+            this.FindControl<ListBox>("LogList")?.ScrollIntoView(count - 1);
     }
 }
