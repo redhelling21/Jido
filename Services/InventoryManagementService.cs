@@ -91,12 +91,10 @@ namespace Jido.Services
                 cfg.InventoryHeight
             );
 
-            // No `using` — EnsureBgr either returns raw unchanged (3-ch) or disposes it and
-            // returns a new Mat. Either way bgr is stored long-term in _emptyReference.
-            var raw = ScreenUtils.CaptureScreen(region);
+            using var raw = ScreenUtils.CaptureScreen(region);
 
             // Normalise to 3-channel BGR to match what Cv2.ImRead returns loading the file afterwards
-            var bgr = OpenCVUtils.EnsureBgr(raw);
+            var bgr = OpenCVUtils.ToBgr(raw);
 
             Cv2.ImWrite(EmptyReferencePath, bgr);
             _logger.LogDebug(
@@ -184,7 +182,8 @@ namespace Jido.Services
 
                 // Get an initial screenshot to see when inv. slots content changes (generally after
                 // it was clicked)
-                using Mat initialMat = OpenCVUtils.EnsureBgr(ScreenUtils.CaptureScreen(inventoryRegion, captureBitmap));
+                using Mat initialRaw = ScreenUtils.CaptureScreen(inventoryRegion, captureBitmap);
+                using Mat initialMat = OpenCVUtils.ToBgr(initialRaw);
                 // Remember which slot we already clicked
                 var clicked = new bool[InventoryManagementConfig.GridWidth, InventoryManagementConfig.GridHeight];
 
@@ -241,7 +240,7 @@ namespace Jido.Services
 
                             // Actualize the content of the slot
                             using Mat currentRaw = ScreenUtils.CaptureScreen(inventoryRegion, captureBitmap);
-                            using Mat currentMat = OpenCVUtils.EnsureBgr(currentRaw);
+                            using Mat currentMat = OpenCVUtils.ToBgr(currentRaw);
                             using var currentCell = new Mat(currentMat, cellRect);
                             double changeRms = CellRms(currentCell, initialCell);
                             if (changeRms > ChangeCheckRmsThreshold)

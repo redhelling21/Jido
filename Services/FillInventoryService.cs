@@ -63,7 +63,8 @@ namespace Jido.Services
                 {
                     token.ThrowIfCancellationRequested();
 
-                    using var mat = OpenCVUtils.EnsureBgr(ScreenUtils.CaptureScreen(region));
+                    using var raw = ScreenUtils.CaptureScreen(region);
+                    using var mat = OpenCVUtils.ToBgr(raw);
                     // Detect the corners in the image
                     var targets = OpenCVUtils.FindCorners(mat, cfg);
                     _logger.LogDebug("FillInventory: {Count} corner(s) detected (pass {Pass})", targets.Count, pass);

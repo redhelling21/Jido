@@ -7,11 +7,11 @@ namespace Jido.UI.Components.Common;
 
 public class PageWithHeader : ContentControl
 {
-    public static readonly StyledProperty<string> TitleProperty = AvaloniaProperty.Register<SidebarMenuItem, string>(
+    public static readonly StyledProperty<string> TitleProperty = AvaloniaProperty.Register<PageWithHeader, string>(
         nameof(Title)
     );
 
-    public static readonly StyledProperty<string> SubtitleProperty = AvaloniaProperty.Register<SidebarMenuItem, string>(
+    public static readonly StyledProperty<string> SubtitleProperty = AvaloniaProperty.Register<PageWithHeader, string>(
         nameof(Subtitle)
     );
 
