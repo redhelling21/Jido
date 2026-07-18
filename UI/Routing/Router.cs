@@ -41,8 +41,10 @@ namespace Jido.UI.Routing
             {
                 if (value == _currentViewModel)
                     return;
+                var previous = _currentViewModel;
                 _currentViewModel = value;
                 OnCurrentViewModelChanged(value);
+                (previous as IDisposable)?.Dispose();
             }
         }
 

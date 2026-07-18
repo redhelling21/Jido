@@ -25,4 +25,13 @@ namespace Jido.Services
         public const string FillInventory = "FillInventory";
         public const string BulkUseItem = "BulkUseItem";
     }
+    public static class ServiceGroups
+    {
+        public static readonly string[] InventoryFeatures =
+        [
+            ServiceNames.InventoryManagement,
+            ServiceNames.FillInventory,
+            ServiceNames.BulkUseItem,
+        ];
+    }
 }

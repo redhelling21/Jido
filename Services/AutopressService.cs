@@ -11,7 +11,6 @@ using Jido.Config;
 using Jido.Models;
 using Jido.Utils;
 using Microsoft.Extensions.Logging;
-using SharpHook;
 using SharpHook.Data;
 
 namespace Jido.Services
@@ -28,7 +27,6 @@ namespace Jido.Services
         };
 
         private readonly ILogger<AutopressService> _logger;
-        private EventSimulator _eventSimulator = new EventSimulator();
         private readonly System.Timers.Timer _suspendTimer = new() { AutoReset = false };
         private readonly ConcurrentQueue<LowLevelCommand> _queuedCommands = new();
         private readonly List<AutopressBuild> _builds = new();
@@ -234,7 +232,7 @@ namespace Jido.Services
             {
                 var token = ResetCts().Token;
                 foreach (var cmd in ConstantCommands)
-                    _eventSimulator.SimulateKeyPress(cmd.KeyToPress);
+                    SimulationUtils.Simulator.SimulateKeyPress(cmd.KeyToPress);
 
                 _ = Task.Run(() => KeyPressRoutine(token));
 
@@ -268,7 +266,7 @@ namespace Jido.Services
                 _suspendTimer.Stop();
 
                 foreach (var cmd in ConstantCommands)
-                    _eventSimulator.SimulateKeyRelease(cmd.KeyToPress);
+                    SimulationUtils.Simulator.SimulateKeyRelease(cmd.KeyToPress);
 
                 foreach (var cmd in ScheduledCommands)
                     cmd.Stop();
@@ -293,7 +291,7 @@ namespace Jido.Services
                         else if (command is PressCommand press)
                         {
                             await Task.Delay(300, cancellationToken);
-                            _eventSimulator.SimulateKeyPress(press.KeyToPress);
+                            SimulationUtils.Simulator.SimulateKeyPress(press.KeyToPress);
                             // finally guarantees release even if cancellation fires mid-hold,
                             // preventing keys from getting stuck in a pressed state.
                             try
@@ -302,7 +300,7 @@ namespace Jido.Services
                             }
                             finally
                             {
-                                _eventSimulator.SimulateKeyRelease(press.KeyToPress);
+                                SimulationUtils.Simulator.SimulateKeyRelease(press.KeyToPress);
                             }
                         }
                     }

@@ -8,14 +8,12 @@ using Jido.Config;
 using Jido.Utils;
 using Microsoft.Extensions.Logging;
 using OpenCvSharp;
-using SharpHook;
 using SharpHook.Data;
 
 namespace Jido.Services
 {
     public class InventoryManagementService : BaseToggleableService, IInventoryManagementService
     {
-        private static readonly EventSimulator _simulator = new EventSimulator();
 
         // How similar a cell must be to the empty reference to be considered empty.
         private const double EmptyCheckRmsThreshold = 40.0;
@@ -117,28 +115,9 @@ namespace Jido.Services
             }
         }
 
-        public override void Toggle()
-        {
-            if (Status == ServiceStatus.WORKING)
-            {
-                StopRoutine();
-                return;
-            }
+        protected override string[] ExclusiveWith => ServiceGroups.InventoryFeatures;
 
-            if (_macroService.Status == ServiceStatus.STOPPED)
-                return;
-
-            if (_serviceHub.IsActive(ServiceNames.FillInventory) || _serviceHub.IsActive(ServiceNames.BulkUseItem))
-                return;
-
-            _ = Task.Run(() => EmptyInventoryRoutine(ResetCts().Token));
-        }
-
-        protected override void StopRoutine()
-        {
-            CancelCts();
-            Status = ServiceStatus.STOPPED;
-        }
+        public override void Toggle() => ToggleOneShotRoutine(EmptyInventoryRoutine);
 
         protected override void PersistToggleCombo(KeyCombo combo) =>
             _config.Features.InventoryManagement.EmptyInventoryKey = combo;
@@ -212,7 +191,7 @@ namespace Jido.Services
                 try
                 {
                     // Press CTRL at the beginning
-                    _simulator.SimulateKeyPress(KeyCode.VcLeftControl);
+                    SimulationUtils.Simulator.SimulateKeyPress(KeyCode.VcLeftControl);
                     for (int row = 0; row < InventoryManagementConfig.GridHeight; row++)
                     {
                         for (int col = 0; col < InventoryManagementConfig.GridWidth; col++)
@@ -306,7 +285,7 @@ namespace Jido.Services
                 finally
                 {
                     // Always release the ctrl key
-                    _simulator.SimulateKeyRelease(KeyCode.VcLeftControl);
+                    SimulationUtils.Simulator.SimulateKeyRelease(KeyCode.VcLeftControl);
                     reference?.Dispose();
                 }
 

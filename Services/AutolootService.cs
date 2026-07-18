@@ -8,7 +8,6 @@ using Jido.Config;
 using Jido.Utils;
 using Microsoft.Extensions.Logging;
 using OpenCvSharp;
-using SharpHook;
 using SharpHook.Data;
 using Point = OpenCvSharp.Point;
 using Size = OpenCvSharp.Size;
@@ -65,8 +64,7 @@ namespace Jido.Services
         protected override void StopRoutine()
         {
             _logger.LogInformation("Autoloot stopped");
-            CancelCts();
-            Status = ServiceStatus.STOPPED;
+            base.StopRoutine();
         }
 
         protected override void PersistToggleCombo(KeyCombo combo) => _config.Features.Autoloot.ToggleKey = combo;
@@ -303,10 +301,6 @@ namespace Jido.Services
             }
         }
 
-        public override void Dispose()
-        {
-            base.Dispose();
-        }
     }
 
     public interface IAutolootService : IServiceWithStatus, IToggleableService
