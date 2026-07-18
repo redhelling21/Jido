@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -17,6 +18,9 @@ namespace Jido.UI.Components.Pages.InventoryManagement
 
         private readonly bool[][] _cells = new bool[GridWidth][];
 
+        private readonly int _physicalGridWidth;
+        private readonly int _physicalGridHeight;
+
         public InventoryOverlay(InventoryOverlayData data)
         {
             Title = "Inventory Layout";
@@ -35,21 +39,42 @@ namespace Jido.UI.Components.Pages.InventoryManagement
                         : new bool[GridHeight];
             }
 
-            Width = data.InventoryWidth;
-            Height = data.InventoryHeight + TitleBarHeight;
+            _physicalGridWidth = data.InventoryWidth;
+            _physicalGridHeight = data.InventoryHeight;
+
+            // Assume no scaling for now
+            Width = _physicalGridWidth;
+            Height = _physicalGridHeight + TitleBarHeight;
             Position = new PixelPoint(data.InventoryPosition[0], data.InventoryPosition[1] - TitleBarHeight);
 
             Content = BuildContent();
         }
 
+        
+        protected override void OnOpened(EventArgs e)
+        {
+            base.OnOpened(e);
+
+            var scaling = DesktopScaling;
+            if (scaling <= 0)
+                return;
+            // Avalonia Width/Height are logical (DIPs) while Position is physical
+            // So we have to convert between the two
+            Width = _physicalGridWidth / scaling;
+            Height = (_physicalGridHeight / scaling) + TitleBarHeight;
+            // Adapt the position after eventual resizing
+            Position = new PixelPoint(Position.X, Position.Y + TitleBarHeight - (int)(TitleBarHeight * scaling));
+        }
+
         public InventoryOverlayData GetInventoryConfig()
         {
+            var scaling = DesktopScaling > 0 ? DesktopScaling : 1.0;
             return new InventoryOverlayData
             {
-                InventoryWidth = (int)ClientSize.Width,
-                InventoryHeight = (int)ClientSize.Height - TitleBarHeight,
+                InventoryWidth = (int)(ClientSize.Width * scaling),
+                InventoryHeight = (int)((ClientSize.Height - TitleBarHeight) * scaling),
                 InventorySlots = _cells,
-                InventoryPosition = [Position.X, Position.Y + TitleBarHeight],
+                InventoryPosition = [Position.X, Position.Y + (int)(TitleBarHeight * scaling)],
             };
         }
 

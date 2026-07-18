@@ -22,8 +22,7 @@ public class JidoConfig
     private readonly ILogger<JidoConfig>? _logger;
 
     [JsonIgnore]
-    private string PersistentFileLocation { get; set; } =
-        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
+    private string PersistentFileLocation { get; set; } = AppPaths.SettingsFile;
 
     public JidoConfig()
     { }
@@ -37,8 +36,7 @@ public class JidoConfig
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
-        string appRootFolder = AppDomain.CurrentDomain.BaseDirectory;
-        PersistentFileLocation = Path.Combine(appRootFolder, filename);
+        PersistentFileLocation = Path.Combine(AppPaths.DataFolder, filename);
         if (string.IsNullOrWhiteSpace(PersistentFileLocation))
             throw new ArgumentException("File path cannot be null or empty.", nameof(PersistentFileLocation));
 
@@ -134,18 +132,14 @@ public class JidoConfig
 
     #region Properties
 
-    public ScreenConfig Screen { get; set; } = new();
+    // Screen dimensions used to be stored here. They are now detected at runtime via
+    // ScreenUtils.PrimaryWidth/PrimaryHeight — a stale hand-entered value silently mis-aimed every
+    // capture region. An obsolete "screen" key in an existing settings.json is simply ignored.
     public FeaturesConfig Features { get; set; } = new();
 
     public KeyCombo ToggleKey { get; set; } = new(SharpHook.Data.KeyCode.VcF7);
 
     #endregion Properties
-}
-
-public class ScreenConfig
-{
-    public int Width { get; set; } = 1920;
-    public int Height { get; set; } = 1080;
 }
 
 public class FeaturesConfig

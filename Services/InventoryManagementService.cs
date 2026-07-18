@@ -31,8 +31,7 @@ namespace Jido.Services
 
         private Mat? _emptyReference;
 
-        private string EmptyReferencePath =>
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "empty_inventory_reference.png");
+        private string EmptyReferencePath => AppPaths.EmptyInventoryReferenceFile;
 
         public InventoryManagementConfig Config => _config.Features.InventoryManagement;
 
