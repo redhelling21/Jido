@@ -37,6 +37,7 @@ namespace Jido
 
             var logger = services.GetRequiredService<ILogger<App>>();
             logger.LogInformation("Jido v2 starting");
+            RequestedThemeVariant = services.GetRequiredService<JidoConfig>().Theme.ToVariant();
             logger.LogInformation("User data folder: {Path}", AppPaths.DataFolder);
 
             // Eagerly instantiate all feature services so their key hooks are registered at startup

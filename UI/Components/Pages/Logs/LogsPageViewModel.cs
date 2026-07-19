@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -13,25 +12,20 @@ namespace Jido.UI.Components.Pages.Logs
     public class LogEntryViewModel
     {
         public string Text { get; }
-        public IBrush Foreground { get; }
         public LogLevel Level { get; }
+
+        // Styling classes rather than baked brushes, so log colors follow the current theme variant.
+        public bool IsDebug => Level == LogLevel.Debug;
+
+        public bool IsWarning => Level == LogLevel.Warning;
+        public bool IsError => Level is LogLevel.Error or LogLevel.Critical;
+        public bool IsInfo => !IsDebug && !IsWarning && !IsError;
 
         public LogEntryViewModel(LogEntry entry)
         {
             Level = entry.Level;
             var category = entry.Category.Split('.')[^1];
             Text = $"[{entry.Timestamp:HH:mm:ss.fff}] [{LevelLabel(entry.Level)}] {category}: {entry.Message}";
-            // Color the text of the log depending on its level
-            Foreground = new SolidColorBrush(
-                entry.Level switch
-                {
-                    LogLevel.Debug => Color.Parse("#777777"),
-                    LogLevel.Information => Color.Parse("#222222"),
-                    LogLevel.Warning => Color.Parse("#CC6600"),
-                    LogLevel.Error or LogLevel.Critical => Color.Parse("#CC2222"),
-                    _ => Color.Parse("#222222")
-                }
-            );
         }
 
         private static string LevelLabel(LogLevel level) =>
@@ -83,7 +77,7 @@ namespace Jido.UI.Components.Pages.Logs
 
         private void OnEntryAdded(LogEntry entry)
         {
-            // LogEntryViewModel allocates a SolidColorBrush, which must happen on the UI thread.
+            // DisplayedEntries is bound to the UI, so it must only be mutated on the UI thread.
             Dispatcher.UIThread.Post(() =>
             {
                 var vm = new LogEntryViewModel(entry);

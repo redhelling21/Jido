@@ -103,11 +103,11 @@
         <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="Button.titlebar-btn:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource Highlight400}" />
+        <Setter Property="Background" Value="{DynamicResource ChromeHover}" />
         <Setter Property="Foreground" Value="White" />
     </Style>
     <Style Selector="Button.titlebar-btn:pressed /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource Highlight700}" />
+        <Setter Property="Background" Value="{DynamicResource ChromeActive}" />
         <Setter Property="Foreground" Value="White" />
     </Style>
     <Style Selector="Button.titlebar-btn-close:pointerover /template/ ContentPresenter">

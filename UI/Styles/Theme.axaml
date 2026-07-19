@@ -1,0 +1,54 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="Highlight50">#f2f9f9</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight100">#ddeff0</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight200">#bfe0e2</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight300">#92cace</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight400">#5faab1</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight500">#438e96</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight600">#3b757f</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight700">#356169</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight800">#325158</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight900">#2d464c</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight950">#1a2c32</SolidColorBrush>
+
+            <!--  Chrome = title bar + sidebar. Page = main content area. Surface = panels on top of it.  -->
+            <SolidColorBrush x:Key="Chrome">#438e96</SolidColorBrush>
+            <SolidColorBrush x:Key="ChromeHover">#3b757f</SolidColorBrush>
+            <SolidColorBrush x:Key="ChromeActive">#356169</SolidColorBrush>
+            <SolidColorBrush x:Key="PageBackground">#ffffff</SolidColorBrush>
+            <SolidColorBrush x:Key="Surface">#ffffff</SolidColorBrush>
+
+            <SolidColorBrush x:Key="LogDebug">#777777</SolidColorBrush>
+            <SolidColorBrush x:Key="LogInfo">#222222</SolidColorBrush>
+            <SolidColorBrush x:Key="LogWarning">#cc6600</SolidColorBrush>
+            <SolidColorBrush x:Key="LogError">#cc2222</SolidColorBrush>
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="Highlight50">#1a2c32</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight100">#2d464c</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight200">#325158</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight300">#356169</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight400">#418b99</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight500">#357380</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight600">#2b5f6a</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight700">#234e57</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight800">#bfe0e2</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight900">#ddeff0</SolidColorBrush>
+            <SolidColorBrush x:Key="Highlight950">#f2f9f9</SolidColorBrush>
+
+            <SolidColorBrush x:Key="Chrome">#2b4048</SolidColorBrush>
+            <SolidColorBrush x:Key="ChromeHover">#35505a</SolidColorBrush>
+            <SolidColorBrush x:Key="ChromeActive">#405f6c</SolidColorBrush>
+            <SolidColorBrush x:Key="PageBackground">#1a2429</SolidColorBrush>
+            <SolidColorBrush x:Key="Surface">#28373d</SolidColorBrush>
+
+            <SolidColorBrush x:Key="LogDebug">#999999</SolidColorBrush>
+            <SolidColorBrush x:Key="LogInfo">#dddddd</SolidColorBrush>
+            <SolidColorBrush x:Key="LogWarning">#cc6600</SolidColorBrush>
+            <SolidColorBrush x:Key="LogError">#cc2222</SolidColorBrush>
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

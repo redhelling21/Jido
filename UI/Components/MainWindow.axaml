@@ -25,7 +25,7 @@
 
     <Grid RowDefinitions="Auto, *, Auto">
         <!--  Title bar  -->
-        <Grid Grid.Row="0" Background="{DynamicResource Highlight500}" Height="36"
+        <Grid Grid.Row="0" Background="{DynamicResource Chrome}" Height="36"
               ColumnDefinitions="Auto, *, Auto"
               PointerPressed="OnTitleBarPointerPressed">
             <Image Margin="8,2,0,0" Source="avares://Jido/UI/Assets/Images/logo.png" />
@@ -46,7 +46,7 @@
             <!--  Side bar  -->
             <sidebar:SidebarView Grid.Column="0" DataContext="{Binding Sidebar}" />
             <!--  Main content  -->
-            <Border Grid.Column="1">
+            <Border Grid.Column="1" Background="{DynamicResource PageBackground}">
                 <ContentControl Content="{Binding Content}" />
             </Border>
         </Grid>

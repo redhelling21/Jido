@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
+using Avalonia.Styling;
 using Jido.Models;
 using Jido.Utils;
 using Microsoft.Extensions.Logging;
@@ -139,7 +140,28 @@ public class JidoConfig
 
     public KeyCombo ToggleKey { get; set; } = new(SharpHook.Data.KeyCode.VcF7);
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public AppTheme Theme { get; set; } = AppTheme.Auto;
+
     #endregion Properties
+}
+
+public enum AppTheme
+{
+    Auto,
+    Light,
+    Dark
+}
+
+public static class AppThemeExtensions
+{
+    public static ThemeVariant ToVariant(this AppTheme theme) =>
+        theme switch
+        {
+            AppTheme.Light => ThemeVariant.Light,
+            AppTheme.Dark => ThemeVariant.Dark,
+            _ => ThemeVariant.Default // Auto: follow the OS
+        };
 }
 
 public class FeaturesConfig

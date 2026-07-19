@@ -96,7 +96,7 @@
                                    HorizontalAlignment="Left" Text="Constant keypress"
                                    Hint="Keys pressed continuously while the autopress is active" />
                 <ScrollViewer MaxHeight="150">
-                    <ItemsControl MinHeight="40" Padding="10" Background="White"
+                    <ItemsControl MinHeight="40" Padding="10" Background="{DynamicResource Surface}"
                                   BorderBrush="{DynamicResource Highlight100}"
                                   BorderThickness="1"
                                   ItemsSource="{Binding ConstantCommands}">
@@ -133,7 +133,7 @@
                                    Hint="Commands that fire on their own independent intervals, rather than continuously" />
                 <Border Grid.Row="1">
                     <ScrollViewer>
-                        <ItemsControl Name="ScheduledCommands" MinHeight="40" Padding="10" Background="White"
+                        <ItemsControl Name="ScheduledCommands" MinHeight="40" Padding="10" Background="{DynamicResource Surface}"
                                       BorderBrush="{DynamicResource Highlight100}"
                                       BorderThickness="1" Classes="CommandList"
                                       ItemsSource="{Binding ScheduledCommands}">
