@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="using:Jido.UI.Converters"
              xmlns:i="https://github.com/projektanker/icons.avalonia"
-             xmlns:local="using:Jido.UI" RequestedThemeVariant="Light">
+             xmlns:local="using:Jido.UI" RequestedThemeVariant="Default">
     <!--  "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options.  -->
 
     <Application.DataTemplates>
@@ -20,29 +20,23 @@
     </Application.Styles>
 
     <Application.Resources>
-        <SolidColorBrush x:Key="Highlight50">#f2f9f9</SolidColorBrush>
-        <SolidColorBrush x:Key="Highlight100">#ddeff0</SolidColorBrush>
-        <SolidColorBrush x:Key="Highlight200">#bfe0e2</SolidColorBrush>
-        <SolidColorBrush x:Key="Highlight300">#92cace</SolidColorBrush>
-        <SolidColorBrush x:Key="Highlight400">#5faab1</SolidColorBrush>
-        <SolidColorBrush x:Key="Highlight500">#438e96</SolidColorBrush>
-        <SolidColorBrush x:Key="Highlight600">#3b757f</SolidColorBrush>
-        <SolidColorBrush x:Key="Highlight700">#356169</SolidColorBrush>
-        <SolidColorBrush x:Key="Highlight800">#325158</SolidColorBrush>
-        <SolidColorBrush x:Key="Highlight900">#2d464c</SolidColorBrush>
-        <SolidColorBrush x:Key="Highlight950">#1a2c32</SolidColorBrush>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Jido/UI/Styles/Theme.axaml" />
+            </ResourceDictionary.MergedDictionaries>
 
-        <SolidColorBrush x:Key="StatusIdle">#39ff14</SolidColorBrush>
-        <SolidColorBrush x:Key="StatusWorking">#ffe135</SolidColorBrush>
-        <SolidColorBrush x:Key="StatusPaused">#ffe135</SolidColorBrush>
-        <SolidColorBrush x:Key="StatusStopped">#ffffff</SolidColorBrush>
-        <SolidColorBrush x:Key="StatusError">#ff1744</SolidColorBrush>
+            <SolidColorBrush x:Key="StatusIdle">#39ff14</SolidColorBrush>
+            <SolidColorBrush x:Key="StatusWorking">#ffe135</SolidColorBrush>
+            <SolidColorBrush x:Key="StatusPaused">#ffe135</SolidColorBrush>
+            <SolidColorBrush x:Key="StatusStopped">#ffffff</SolidColorBrush>
+            <SolidColorBrush x:Key="StatusError">#ff1744</SolidColorBrush>
 
-        <FontFamily x:Key="Nunito">avares://Jido/UI/Assets/Fonts#Nunito</FontFamily>
-        <FontFamily x:Key="Inter">avares://Jido/UI/Assets/Fonts#Inter</FontFamily>
-        <FontFamily x:Key="Montserrat">avares://Jido/UI/Assets/Fonts#Montserrat</FontFamily>
+            <FontFamily x:Key="Nunito">avares://Jido/UI/Assets/Fonts#Nunito</FontFamily>
+            <FontFamily x:Key="Inter">avares://Jido/UI/Assets/Fonts#Inter</FontFamily>
+            <FontFamily x:Key="Montserrat">avares://Jido/UI/Assets/Fonts#Montserrat</FontFamily>
 
-        <converters:RGBToColorConverter x:Key="RGBToColorConverter" />
-        <converters:KeyCodeConverter x:Key="KeyCodeConverter" />
+            <converters:RGBToColorConverter x:Key="RGBToColorConverter" />
+            <converters:KeyCodeConverter x:Key="KeyCodeConverter" />
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

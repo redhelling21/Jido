@@ -9,7 +9,7 @@
     <Design.DataContext>
         <vm:SidebarViewModel />
     </Design.DataContext>
-    <Grid Background="{DynamicResource Highlight500}" RowDefinitions=" Auto, *, 70">
+    <Grid Background="{DynamicResource Chrome}" RowDefinitions=" Auto, *, 70">
 
         <Border Grid.Row="1" Padding="10" Classes="menuitems">
             <StackPanel>

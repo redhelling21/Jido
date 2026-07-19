@@ -32,7 +32,7 @@
             </DockPanel>
 
             <!--  Log list  -->
-            <Border Background="#F5F5F5" CornerRadius="5" Padding="8" Margin="0,0,0,15">
+            <Border Background="{DynamicResource Surface}" CornerRadius="5" Padding="8" Margin="0,0,0,15">
                 <!--  ListBox virtualizes, ItemsControl does not  -->
                 <ListBox Name="LogList"
                          ItemsSource="{Binding DisplayedEntries}"
@@ -45,11 +45,26 @@
                             <Setter Property="Padding" Value="0" />
                             <Setter Property="MinHeight" Value="0" />
                         </Style>
+                        <Style Selector="SelectableTextBlock.debug">
+                            <Setter Property="Foreground" Value="{DynamicResource LogDebug}" />
+                        </Style>
+                        <Style Selector="SelectableTextBlock.info">
+                            <Setter Property="Foreground" Value="{DynamicResource LogInfo}" />
+                        </Style>
+                        <Style Selector="SelectableTextBlock.warning">
+                            <Setter Property="Foreground" Value="{DynamicResource LogWarning}" />
+                        </Style>
+                        <Style Selector="SelectableTextBlock.error">
+                            <Setter Property="Foreground" Value="{DynamicResource LogError}" />
+                        </Style>
                     </ListBox.Styles>
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:LogEntryViewModel">
                             <SelectableTextBlock Text="{Binding Text}"
-                                                 Foreground="{Binding Foreground}"
+                                                 Classes.debug="{Binding IsDebug}"
+                                                 Classes.info="{Binding IsInfo}"
+                                                 Classes.warning="{Binding IsWarning}"
+                                                 Classes.error="{Binding IsError}"
                                                  FontFamily="Consolas,Courier New,monospace"
                                                  FontSize="12"
                                                  TextWrapping="NoWrap" />
