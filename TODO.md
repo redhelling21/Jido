@@ -21,6 +21,7 @@ Because I'm too lazy to create issues, here's a list of things I want to do with
   - [ ] Auto disable if low life/es/mana
   - [ ] Special key to trigger autoloot ignoring movements
   - [x] Randomize click positions
+  - [ ] Debug window
 - [ ] Autopress
   - [x] Implement autopress
   - [ ] Allow groups of keys to trigger together with a specific delay
@@ -47,3 +48,4 @@ Because I'm too lazy to create issues, here's a list of things I want to do with
 - [ ] Chaos recipe
 - [ ] Logout macro
 - [x] Logs in-app
+- [ ] Multiplatform shipping (linux)

@@ -25,13 +25,26 @@ public partial class LogsPageView : UserControl
             _viewModel.DisplayedEntries.CollectionChanged += OnEntriesChanged;
     }
 
+    // Roughly one row: enough slack that "at the bottom" survives the entry that just arrived
+    private const double StickToBottomTolerancePx = 40;
+
     private void OnEntriesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.Action != NotifyCollectionChangedAction.Add || _viewModel is null)
             return;
 
+        var list = this.FindControl<ListBox>("LogList");
+        if (list is null)
+            return;
+
+        // Only follow the tail when the user is already at it
+        var scroll = list.Scroll;
+        if (scroll is not null
+            && scroll.Offset.Y < scroll.Extent.Height - scroll.Viewport.Height - StickToBottomTolerancePx)
+            return;
+
         var count = _viewModel.DisplayedEntries.Count;
         if (count > 0)
-            this.FindControl<ListBox>("LogList")?.ScrollIntoView(count - 1);
+            list.ScrollIntoView(count - 1);
     }
 }

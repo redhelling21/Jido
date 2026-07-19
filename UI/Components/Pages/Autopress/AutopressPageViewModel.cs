@@ -27,12 +27,19 @@ namespace Jido.UI.Components.Pages.Autopress
         private double intervalsRandomizationRatio;
 
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(SaveBuildCommand))]
         private string newBuildName = string.Empty;
 
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(LoadBuildCommand))]
+        [NotifyCanExecuteChangedFor(nameof(DeleteBuildCommand))]
         private string? selectedBuild;
 
         public ObservableCollection<string> BuildNames { get; } = new();
+
+        public SaveFeedback ConfigSaveState { get; } = new("Save all");
+
+        public SaveFeedback BuildSaveState { get; } = new();
 
         public ObservableCollection<HighLevelCommandViewModel> ScheduledCommands { get; } =
             new ObservableCollection<HighLevelCommandViewModel>();
@@ -205,25 +212,36 @@ namespace Jido.UI.Components.Pages.Autopress
         [RelayCommand]
         private void SaveAutoPressConfig()
         {
-            _autopressService?.UpdateConfig(BuildCurrentConfig());
+            if (_autopressService is null) return;
+            _autopressService.UpdateConfig(BuildCurrentConfig());
+            ConfigSaveState.Flash();
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanSaveBuild))]
         private void SaveBuild()
         {
             var name = NewBuildName.Trim();
             if (string.IsNullOrEmpty(name) || _autopressService is null) return;
-            _autopressService.SaveBuild(name, BuildCurrentConfig());
-            if (!BuildNames.Contains(name))
-                BuildNames.Add(name);
-            SelectedBuild = name;
+
+            // Only reflect the build in the UI once it actually reached disk
+            var saved = _autopressService.SaveBuild(name, BuildCurrentConfig());
+            if (saved)
+            {
+                if (!BuildNames.Contains(name))
+                    BuildNames.Add(name);
+                SelectedBuild = name;
+            }
+            BuildSaveState.Flash(saved);
         }
 
-        [RelayCommand]
+        private bool CanSaveBuild() =>
+            _autopressService is not null && !string.IsNullOrWhiteSpace(NewBuildName);
+
+        [RelayCommand(CanExecute = nameof(HasSelectedBuild))]
         private void LoadBuild()
         {
             if (SelectedBuild is null || _autopressService is null) return;
-            _autopressService.LoadBuild(SelectedBuild);
+            if (!_autopressService.LoadBuild(SelectedBuild)) return;
             ClickDelay = _autopressService.ClickDelay;
             IntervalsRandomizationRatio = _autopressService.IntervalRandomizationRatio * 100;
             ScheduledCommands.Clear();
@@ -234,14 +252,16 @@ namespace Jido.UI.Components.Pages.Autopress
                 ConstantCommands.Add(cmd);
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(HasSelectedBuild))]
         private void DeleteBuild()
         {
             if (SelectedBuild is null || _autopressService is null) return;
-            _autopressService.DeleteBuild(SelectedBuild);
+            if (!_autopressService.DeleteBuild(SelectedBuild)) return;
             BuildNames.Remove(SelectedBuild);
             SelectedBuild = BuildNames.Count > 0 ? BuildNames[0] : null;
         }
+
+        private bool HasSelectedBuild() => _autopressService is not null && SelectedBuild is not null;
 
         private AutopressConfig BuildCurrentConfig() => new()
         {
