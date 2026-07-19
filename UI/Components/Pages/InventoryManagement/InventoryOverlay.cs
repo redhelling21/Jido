@@ -29,6 +29,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
             ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
             SystemDecorations = SystemDecorations.None;
             CanResize = true;
+            Topmost = true;
 
             // Initialize cell state arrays
             for (int col = 0; col < GridWidth; col++)

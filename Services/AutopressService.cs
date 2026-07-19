@@ -143,11 +143,11 @@ namespace Jido.Services
             return null;
         }
 
-        public void SaveBuild(string name, AutopressConfig config)
+        public bool SaveBuild(string name, AutopressConfig config)
         {
             var path = TryGetBuildPath(name);
             if (path is null)
-                return;
+                return false;
 
             try
             {
@@ -157,22 +157,24 @@ namespace Jido.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save autopress build '{Name}'.", name);
-                return;
+                return false;
             }
             var existing = _builds.FirstOrDefault(b => b.Name == name);
             if (existing != null)
                 existing.Config = config;
             else
                 _builds.Add(new AutopressBuild { Name = name, Config = config });
+            return true;
         }
 
-        public void LoadBuild(string name)
+        public bool LoadBuild(string name)
         {
             var build = _builds.FirstOrDefault(b => b.Name == name);
-            if (build is null) return;
+            if (build is null) return false;
             var copy = DeepCopy(build.Config);
-            if (copy is null) return;
+            if (copy is null) return false;
             UpdateConfig(copy);
+            return true;
         }
 
         /// <summary>
@@ -192,14 +194,14 @@ namespace Jido.Services
             }
         }
 
-        public void DeleteBuild(string name)
+        public bool DeleteBuild(string name)
         {
             var build = _builds.FirstOrDefault(b => b.Name == name);
-            if (build is null) return;
+            if (build is null) return false;
 
             var path = TryGetBuildPath(name);
             if (path is null)
-                return;
+                return false;
 
             try
             {
@@ -209,9 +211,10 @@ namespace Jido.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to delete autopress build '{Name}'.", name);
-                return;
+                return false;
             }
             _builds.Remove(build);
+            return true;
         }
 
         public void SuspendAutoPress(object? sender, EventArgs e)
@@ -367,8 +370,8 @@ namespace Jido.Services
         public void UpdateConfig(AutopressConfig config);
 
         IReadOnlyList<AutopressBuild> Builds { get; }
-        void SaveBuild(string name, AutopressConfig config);
-        void LoadBuild(string name);
-        void DeleteBuild(string name);
+        bool SaveBuild(string name, AutopressConfig config);
+        bool LoadBuild(string name);
+        bool DeleteBuild(string name);
     }
 }

@@ -104,10 +104,12 @@ namespace Jido.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled exception in FillRoutine");
+                Status = ServiceStatus.ERROR;
             }
             finally
             {
-                Status = ServiceStatus.STOPPED;
+                if (Status != ServiceStatus.ERROR)
+                    Status = ServiceStatus.STOPPED;
             }
         }
     }

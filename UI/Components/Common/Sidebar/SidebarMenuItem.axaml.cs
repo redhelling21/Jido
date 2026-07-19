@@ -45,9 +45,20 @@ public partial class SidebarMenuItem : Button
         set => SetValue(PathProperty, value);
     }
 
+    public static readonly StyledProperty<bool> ShowStatusProperty = AvaloniaProperty.Register<SidebarMenuItem, bool>(
+        nameof(ShowStatus),
+        defaultValue: true
+    );
+
     public ServiceStatus Status
     {
         get => GetValue(StatusProperty);
         set => SetValue(StatusProperty, value);
+    }
+
+    public bool ShowStatus
+    {
+        get => GetValue(ShowStatusProperty);
+        set => SetValue(ShowStatusProperty, value);
     }
 }

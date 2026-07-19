@@ -49,7 +49,8 @@
                         <i:Icon Grid.Column="0" FontSize="18" Value="{TemplateBinding MenuIcon}" />
                         <TextBlock Grid.Column="1" Margin="10,1,0,0" VerticalAlignment="Center"
                                    Text="{TemplateBinding MenuName}" />
-                        <i:Icon Classes="status-indicator" Grid.Column="2" FontSize="8" Value="fa fa-circle" />
+                        <i:Icon Classes="status-indicator" Grid.Column="2" FontSize="8" Value="fa fa-circle"
+                                IsVisible="{TemplateBinding ShowStatus}" />
                     </Grid>
                 </Button>
             </ControlTemplate>

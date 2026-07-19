@@ -20,7 +20,7 @@
             <Grid ColumnDefinitions="*, 5, 100, 5, *" RowDefinitions="Auto">
                 <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                            VerticalAlignment="Center" Text="Toggle macro" />
-                <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" IsEnabled="False"
+                <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" IsReadOnly="True"
                          Text="{Binding ToggleKey, Converter={StaticResource KeyCodeConverter}}" />
                 <Button Grid.Row="0" Grid.Column="4" VerticalAlignment="Center"
                         Command="{Binding ChangeKeyCommand}"

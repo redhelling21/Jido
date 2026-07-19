@@ -298,6 +298,7 @@ namespace Jido.Services
             {
                 _logger.LogError(ex, "Unhandled exception in AutolootRoutine; stopping service.");
                 StopRoutine();
+                Status = ServiceStatus.ERROR;
             }
         }
 

@@ -41,22 +41,25 @@
                 <Grid ColumnDefinitions="Auto, 5, *, 5, Auto" RowDefinitions="Auto, 5, Auto, 5, Auto">
                     <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                                VerticalAlignment="Center" Text="Toggle key" />
-                    <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
+                    <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" IsReadOnly="True"
                              Text="{Binding ToggleKey, Converter={StaticResource KeyCodeConverter}}" />
                     <Button Grid.Row="0" Grid.Column="4" VerticalAlignment="Center"
                             Command="{Binding ChangeKeyCommand}"
                             Content="{Binding ChangeKeyButtonText}" />
                     <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
                                VerticalAlignment="Center" Text="Click delay" />
-                    <TextBox Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"
-                             Text="{Binding ClickDelay}" />
+                    <NumericUpDown Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"
+                                   Minimum="0" Maximum="60000" Increment="50"
+                                   FormatString="0" ParsingNumberStyle="Integer"
+                                   Value="{Binding ClickDelay}" />
                     <common:FieldLabel Grid.Row="2" Grid.Column="4" HorizontalAlignment="Left"
                                        Margin="4,0,0,0" Text="ms"
                                        Hint="When you click, the autopress pauses for this delay" />
                     <TextBlock Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right"
                                VerticalAlignment="Center" Text="Intervals rand" />
-                    <TextBox Grid.Row="4" Grid.Column="2" VerticalAlignment="Center"
-                             Text="{Binding IntervalsRandomizationRatio}" />
+                    <NumericUpDown Grid.Row="4" Grid.Column="2" VerticalAlignment="Center"
+                                   Minimum="0" Maximum="100" Increment="1"
+                                   Value="{Binding IntervalsRandomizationRatio}" />
                     <common:FieldLabel Grid.Row="4" Grid.Column="4" HorizontalAlignment="Left"
                                        Margin="4,0,0,0" Text="%"
                                        Hint="Randomizes each press interval by up to this percentage" />
@@ -80,11 +83,11 @@
                     <TextBox Grid.Row="2" Grid.Column="0"
                              Text="{Binding NewBuildName}"
                              Watermark="Build name…" />
-                    <Button Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3"
+                    <Button Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Classes="save"
                             Command="{Binding SaveBuildCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />
-                            <TextBlock Text="Save" />
+                            <i:Icon Margin="0,0,5,0" Value="{Binding BuildSaveState.Icon}" />
+                            <TextBlock Text="{Binding BuildSaveState.Text}" />
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -145,7 +148,9 @@
                                             </StackPanel>
                                             <StackPanel Grid.Column="2" Orientation="Horizontal">
                                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Interval" />
-                                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding IntervalInMs}" />
+                                                <NumericUpDown Width="50" Margin="0,0,5,0"
+                                                               Minimum="0" Maximum="3600000" FormatString="0"
+                                                               ParsingNumberStyle="Integer" Value="{Binding IntervalInMs}" />
                                                 <Button Command="{Binding $parent[ItemsControl].((vm:AutopressPageViewModel)DataContext).RemoveHighLevelCommandCommand}" CommandParameter="{Binding .}">
                                                     <i:Icon Value="fa fa-minus" />
                                                 </Button>
@@ -180,7 +185,9 @@
                                             </StackPanel>
                                             <StackPanel Grid.Column="2" Orientation="Horizontal">
                                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Interval" />
-                                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding IntervalInMs}" />
+                                                <NumericUpDown Width="50" Margin="0,0,5,0"
+                                                               Minimum="0" Maximum="3600000" FormatString="0"
+                                                               ParsingNumberStyle="Integer" Value="{Binding IntervalInMs}" />
                                                 <Button Command="{Binding $parent[ItemsControl].((vm:AutopressPageViewModel)DataContext).RemoveHighLevelCommandCommand}" CommandParameter="{Binding .}">
                                                     <i:Icon Value="fa fa-minus" />
                                                 </Button>
@@ -205,7 +212,9 @@
                                                                 <TextBlock Width="40" Margin="0,0,5,0" VerticalAlignment="Center" Text="Press" />
                                                                 <TextBox Width="50" Margin="0,0,5,0" Text="{Binding KeyToPress, Converter={StaticResource KeyCodeConverter}, UpdateSourceTrigger=LostFocus}" />
                                                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="for" />
-                                                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding PressDurationInMs}" />
+                                                                <NumericUpDown Width="50" Margin="0,0,5,0"
+                                                                               Minimum="0" Maximum="3600000" FormatString="0"
+                                                                               ParsingNumberStyle="Integer" Value="{Binding PressDurationInMs}" />
                                                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="ms" />
                                                             </StackPanel>
                                                             <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].((commands:CompositeHighLevelCommandViewModel)DataContext).RemoveLowLevelCommand}" CommandParameter="{Binding .}">
@@ -218,7 +227,9 @@
                                                         <Grid ColumnDefinitions="Auto, *, Auto">
                                                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" Orientation="Horizontal">
                                                                 <TextBlock Width="40" Margin="0,0,5,0" VerticalAlignment="Center" Text="Wait" />
-                                                                <TextBox Width="50" Margin="0,0,5,0" Text="{Binding WaitTimeInMs}" />
+                                                                <NumericUpDown Width="50" Margin="0,0,5,0"
+                                                                               Minimum="0" Maximum="3600000" FormatString="0"
+                                                                               ParsingNumberStyle="Integer" Value="{Binding WaitTimeInMs}" />
                                                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="ms" />
                                                             </StackPanel>
                                                             <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].((commands:CompositeHighLevelCommandViewModel)DataContext).RemoveLowLevelCommand}" CommandParameter="{Binding .}">
@@ -244,11 +255,11 @@
                             <i:Icon Value="fa fa-folder-plus" />
                         </Button>
                     </StackPanel>
-                    <Button Grid.Column="2" Command="{Binding SaveAutoPressConfigCommand}">
+                    <Button Grid.Column="2" Classes="save" Command="{Binding SaveAutoPressConfigCommand}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
-                                <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />
-                                <TextBlock Text="Save all" />
+                                <i:Icon Margin="0,0,5,0" Value="{Binding ConfigSaveState.Icon}" />
+                                <TextBlock Text="{Binding ConfigSaveState.Text}" />
                             </StackPanel>
                         </Button.Content>
                     </Button>

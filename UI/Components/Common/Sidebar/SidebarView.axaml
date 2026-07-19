@@ -39,7 +39,8 @@
             <sidebar:SidebarMenuItem Click="SetActiveState"
                                      Command="{Binding NavigateTo}"
                                      CommandParameter="{Binding $self.Path}"
-                                     MenuIcon="fa fa-scroll" MenuName="Logs" Path="Logs" />
+                                     MenuIcon="fa fa-scroll" MenuName="Logs" Path="Logs"
+                                     ShowStatus="False" />
         </Border>
     </Grid>
 </UserControl>

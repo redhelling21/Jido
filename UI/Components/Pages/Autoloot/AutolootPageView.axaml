@@ -19,7 +19,7 @@
             <Grid ColumnDefinitions="Auto, 5, *, 5, Auto" RowDefinitions="Auto">
                 <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                            VerticalAlignment="Center" Text="Toggle key" />
-                <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" IsEnabled="False"
+                <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" IsReadOnly="True"
                          Text="{Binding ToggleKey, Converter={StaticResource KeyCodeConverter}}" />
                 <Button Grid.Row="0" Grid.Column="4" VerticalAlignment="Center"
                         Command="{Binding ChangeKeyCommand}"
@@ -31,25 +31,29 @@
             <Grid ColumnDefinitions="Auto, 5, *, 5, Auto" RowDefinitions="Auto, 5, Auto, 5, Auto">
                 <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                            VerticalAlignment="Center" Text="Cycle delay" />
-                <TextBox Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
-                         Text="{Binding CycleDelayMs}" />
+                <NumericUpDown Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
+                               Minimum="1" Maximum="60000" Increment="50"
+                               FormatString="0" ParsingNumberStyle="Integer"
+                               Value="{Binding CycleDelayMs}" />
                 <common:FieldLabel Grid.Row="0" Grid.Column="4" HorizontalAlignment="Left"
                                    Margin="4,0,0,0" Text="ms"
                                    Hint="How long to wait between each screen capture and click cycle" />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
                            VerticalAlignment="Center" Text="Capture ratio" />
-                <TextBox Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"
-                         Text="{Binding CaptureRatioPercent}" />
+                <NumericUpDown Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"
+                               Minimum="1" Maximum="100" Increment="5"
+                               FormatString="0" ParsingNumberStyle="Integer"
+                               Value="{Binding CaptureRatioPercent}" />
                 <common:FieldLabel Grid.Row="2" Grid.Column="4" HorizontalAlignment="Left"
                                    Margin="4,0,0,0" Text="%"
                                    Hint="Portion of the screen to scan. Lower values improve performance but may miss items near the edges." />
 
-                <Button Grid.Row="4" Grid.Column="4" HorizontalAlignment="Right"
+                <Button Grid.Row="4" Grid.Column="4" HorizontalAlignment="Right" Classes="save"
                         Command="{Binding SaveAutolootConfigCommand}">
                     <StackPanel Orientation="Horizontal">
-                        <i:Icon Margin="0,0,5,0" Value="fa fa-floppy-disk" />
-                        <TextBlock Text="Save" />
+                        <i:Icon Margin="0,0,5,0" Value="{Binding SaveState.Icon}" />
+                        <TextBlock Text="{Binding SaveState.Text}" />
                     </StackPanel>
                 </Button>
             </Grid>

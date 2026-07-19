@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:sidebar="using:Jido.UI.Components.Common.Sidebar"
         xmlns:vm="using:Jido.UI.Components" Title="Jido" Width="1080" Height="640"
+        MinWidth="900" MinHeight="560"
         d:DesignHeight="640" d:DesignWidth="1080" x:DataType="vm:MainWindowViewModel"
         Focusable="True"
         FontFamily="{StaticResource Nunito}"

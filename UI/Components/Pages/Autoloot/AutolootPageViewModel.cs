@@ -21,6 +21,8 @@ namespace Jido.UI.Components.Pages.Autoloot
         [ObservableProperty]
         private string _avgCycleMs = "—";
 
+        public SaveFeedback SaveState { get; } = new();
+
         public AutolootPageViewModel() { }
 
         public AutolootPageViewModel(IAutolootService autolootService)
@@ -39,7 +41,9 @@ namespace Jido.UI.Components.Pages.Autoloot
         [RelayCommand]
         private void SaveAutolootConfig()
         {
-            _autolootService?.UpdateConfig(CycleDelayMs, CaptureRatioPercent / 100.0);
+            if (_autolootService is null) return;
+            _autolootService.UpdateConfig(CycleDelayMs, CaptureRatioPercent / 100.0);
+            SaveState.Flash();
         }
 
         public void Dispose()

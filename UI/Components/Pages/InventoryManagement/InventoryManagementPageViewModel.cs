@@ -54,6 +54,8 @@ namespace Jido.UI.Components.Pages.InventoryManagement
         [ObservableProperty]
         private int _bulkClickDelayMs;
 
+        public SaveFeedback SaveState { get; } = new("Save all");
+
         public InventoryManagementPageViewModel()
         { }
 
@@ -132,6 +134,7 @@ namespace Jido.UI.Components.Pages.InventoryManagement
             _inventoryService.CaptureAndSaveEmptyReference();
             _fillService.UpdateConfig(FillClickDelayMs);
             _bulkService.UpdateConfig(BulkClickDelayMs);
+            SaveState.Flash();
         }
 
         [RelayCommand(CanExecute = nameof(CanChangeEmptyKey))]
